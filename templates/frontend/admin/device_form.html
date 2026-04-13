@@ -72,7 +72,7 @@
               name="name"
               class="form-control"
               placeholder="z.B. MacBook Pro 14"
-              value="{{ form_data.name|default:device.name|default:'' }}"
+              value="{% if form_data %}{{ form_data.name }}{% elif device %}{{ device.name }}{% endif %}"
               required
             >
           </div>
@@ -174,7 +174,7 @@
               name="standort"
               class="form-control"
               placeholder="z.B. Raum A1.23"
-              value="{{ form_data.standort|default:device.standort|default:'' }}"
+              value="{% if form_data %}{{ form_data.standort }}{% elif device %}{{ device.standort }}{% endif %}"
             >
           </div>
 
@@ -201,7 +201,7 @@
               class="form-control form-control--textarea"
               placeholder="Optionale Hinweise zum Gerät…"
               rows="3"
-            >{{ form_data.bemerkungen|default:device.bemerkungen|default:'' }}</textarea>
+            >{% if form_data %}{{ form_data.bemerkungen }}{% elif device %}{{ device.bemerkungen }}{% endif %}</textarea>
           </div>
 
           <div class="form-actions">
@@ -256,3 +256,4 @@
   </div>
 </div>
 {% endblock %}
+

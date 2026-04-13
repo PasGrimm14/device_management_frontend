@@ -1,17 +1,35 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}QR-Scanner – DHBW Gerätemanagement{% endblock %}
+{% block title %}Scanner – DHBW Gerätemanagement{% endblock %}
 
 {% block content %}
 <div class="page-hero">
   <div class="page-hero-inner">
-    <h1 class="page-hero-title">QR-Scanner</h1>
-    <p class="page-hero-sub">Gerät per QR-Code scannen</p>
+    <h1 class="page-hero-title">Scanner</h1>
+    <p class="page-hero-sub">Gerät per QR-Code oder NFC scannen</p>
   </div>
 </div>
 
-<div class="scanner-layout">
+<div class="scanner-tab-bar">
+  <button class="scanner-tab active" data-tab="qr" id="tab-btn-qr">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/>
+      <path d="M14 14h1v1h-1zM17 14h1v1h-1zM20 14v1M14 17h1M17 17h1v1h-1zM20 17v1M14 20h1v1h-1zM17 20h3"/>
+    </svg>
+    QR-Code
+  </button>
+  <button class="scanner-tab" data-tab="nfc" id="tab-btn-nfc">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H7v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V10h3.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/>
+    </svg>
+    NFC
+  </button>
+</div>
+
+{# ============================================================ QR TAB ============================================================ #}
+<div class="scanner-layout" id="tab-qr">
   <div class="card scanner-card">
     <div class="card-header">
       <h2 class="card-title">Kamera-Scanner</h2>
@@ -95,29 +113,104 @@
     </div>
   </div>
 </div>
+
+{# ============================================================ NFC TAB ============================================================ #}
+<div class="scanner-layout" id="tab-nfc" style="display:none">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">NFC-Tag lesen</h2>
+    </div>
+    <div class="card-body">
+      <div id="nfc-not-supported" class="nfc-not-supported" style="display:none">
+        <strong>Aktiver NFC-Scan wird von diesem Browser nicht unterstützt.</strong><br><br>
+        <strong>iPhone (iOS 13+):</strong> NFC-Tags werden automatisch vom System erkannt —
+        einfach das iPhone an den Tag halten. iOS zeigt ein Banner an, das den Link direkt in Safari öffnet.
+        Dafür muss der Tag eine URL enthalten (z.B. <code>https://…/geraete/42/</code>).<br><br>
+        <strong>Android:</strong> Aktiver Scan ist in Google Chrome ab Version 89 verfügbar.
+        Bitte nutzen Sie Chrome auf Android oder den QR-Code-Scanner.
+      </div>
+
+      <div id="nfc-zone" class="nfc-zone">
+        <div class="nfc-icon" id="nfc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" opacity=".3"/>
+            <path d="M8.5 8.5C7 9.5 6 11 6 12.5s1 3 2.5 4M15.5 8.5C17 9.5 18 11 18 12.5s-1 3-2.5 4"/>
+            <path d="M10.5 10.5C9.8 11 9.5 11.7 9.5 12.5s.3 1.5 1 2M13.5 10.5c.7.5 1 1.2 1 2s-.3 1.5-1 2"/>
+            <circle cx="12" cy="12.5" r="1"/>
+          </svg>
+        </div>
+        <p class="nfc-label" id="nfc-label">NFC-Scan starten, um einen Tag zu lesen</p>
+
+        <div id="nfc-result" style="display:none; text-align:center">
+          <p id="nfc-result-text" class="scanner-result-text" style="margin-bottom:.75rem"></p>
+          <a id="nfc-result-link" href="#" class="btn btn-primary btn-sm">Gerät anzeigen</a>
+        </div>
+
+        <div id="nfc-actions">
+          <button id="nfc-start-btn" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" opacity=".3"/>
+              <path d="M8.5 8.5C7 9.5 6 11 6 12.5s1 3 2.5 4M15.5 8.5C17 9.5 18 11 18 12.5s-1 3-2.5 4"/>
+            </svg>
+            NFC-Scan starten
+          </button>
+          <button id="nfc-stop-btn" class="btn btn-ghost" style="display:none">Scan stoppen</button>
+        </div>
+
+        <p id="nfc-error-text" style="display:none; color:var(--danger); font-size:0.875rem"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--info">
+    <div class="card-body">
+      <h3 class="info-title">NFC – Gerätekompatibilität</h3>
+      <ul class="info-list">
+        <li><strong>iPhone (iOS 13+):</strong> Kein Scan-Button nötig — iPhone erkennt Tags automatisch und zeigt ein System-Banner an.</li>
+        <li><strong>Android (Chrome 89+):</strong> Scan über den „NFC-Scan starten"-Button, HTTPS erforderlich.</li>
+        <li>Der NFC-Tag muss eine URL im Format <code>/geraete/&lt;id&gt;/</code> oder eine reine Geräte-ID enthalten.</li>
+        <li>Alle anderen Browser: QR-Code-Scanner oder manuelle Suche verwenden.</li>
+      </ul>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function() {
-  const startBtn = document.getElementById('start-scanner');
+  // ─── Tab switching ────────────────────────────────────────────
+  const tabBtns = document.querySelectorAll('.scanner-tab');
+  const tabPanels = { qr: document.getElementById('tab-qr'), nfc: document.getElementById('tab-nfc') };
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+      Object.entries(tabPanels).forEach(([key, el]) => {
+        el.style.display = key === target ? '' : 'none';
+      });
+      // Stop QR scanner when switching away
+      if (target !== 'qr') stopScanner();
+    });
+  });
+
+  // ─── QR Scanner ──────────────────────────────────────────────
+  const startBtn    = document.getElementById('start-scanner');
   const placeholder = document.getElementById('scanner-placeholder');
-  const video = document.getElementById('scanner-video');
-  const canvas = document.getElementById('scanner-canvas');
-  const resultDiv = document.getElementById('scanner-result');
-  const errorDiv = document.getElementById('scanner-error');
-  const resultText = document.getElementById('scanner-result-text');
-  const resultLink = document.getElementById('scanner-result-link');
-  const errorText = document.getElementById('scanner-error-text');
+  const video       = document.getElementById('scanner-video');
+  const canvas      = document.getElementById('scanner-canvas');
+  const resultDiv   = document.getElementById('scanner-result');
+  const errorDiv    = document.getElementById('scanner-error');
+  const resultText  = document.getElementById('scanner-result-text');
+  const resultLink  = document.getElementById('scanner-result-link');
+  const errorText   = document.getElementById('scanner-error-text');
   let stream = null;
   let scanning = false;
 
   function stopScanner() {
     scanning = false;
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
     video.style.display = 'none';
     video.srcObject = null;
   }
@@ -131,7 +224,7 @@
     errorDiv.style.display = 'none';
   }
 
-  function showError(msg) {
+  function showQRError(msg) {
     stopScanner();
     placeholder.style.display = 'none';
     errorText.textContent = msg;
@@ -146,41 +239,40 @@
     video.style.display = 'none';
   }
 
-  // Scan loop using BarcodeDetector if available, else canvas decode
-  async function scanFrame() {
-    if (!scanning) return;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      if ('BarcodeDetector' in window) {
-        try {
-          const detector = new BarcodeDetector({ formats: ['qr_code'] });
-          const codes = await detector.detect(canvas);
-          if (codes.length > 0) {
-            handleQRValue(codes[0].rawValue);
-            return;
-          }
-        } catch (e) {}
-      }
-    }
-    if (scanning) requestAnimationFrame(scanFrame);
-  }
-
-  function handleQRValue(value) {
-    // Expect URL like /geraete/123/ or a device id
+  function handleDeviceValue(value) {
     const match = value.match(/\/geraete\/(\d+)\//);
     if (match) {
       showResult('/geraete/' + match[1] + '/', 'Gerät gefunden – zur Geräteseite');
     } else if (/^\d+$/.test(value.trim())) {
       showResult('/geraete/' + value.trim() + '/', 'Gerät #' + value.trim());
     } else if (value.startsWith('http')) {
-      showResult(value, 'QR-Code erkannt');
+      showResult(value, 'Code erkannt');
     } else {
-      showError('QR-Code konnte nicht einem Gerät zugeordnet werden: ' + value);
+      return false;
     }
+    return true;
+  }
+
+  async function scanFrame() {
+    if (!scanning) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      if ('BarcodeDetector' in window) {
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const codes = await detector.detect(canvas);
+          if (codes.length > 0) {
+            if (!handleDeviceValue(codes[0].rawValue)) {
+              showQRError('QR-Code konnte nicht einem Gerät zugeordnet werden: ' + codes[0].rawValue);
+            }
+            return;
+          }
+        } catch (e) {}
+      }
+    }
+    if (scanning) requestAnimationFrame(scanFrame);
   }
 
   if (startBtn) {
@@ -194,7 +286,7 @@
         scanning = true;
         requestAnimationFrame(scanFrame);
       } catch (e) {
-        showError('Kamerazugriff nicht möglich: ' + e.message);
+        showQRError('Kamerazugriff nicht möglich: ' + e.message);
       }
     });
   }
@@ -202,24 +294,112 @@
   document.getElementById('scan-again')?.addEventListener('click', resetScanner);
   document.getElementById('scan-again-error')?.addEventListener('click', resetScanner);
 
-  // Manual search
-  document.getElementById('manual-search-form')?.addEventListener('submit', async (e) => {
+  document.getElementById('manual-search-form')?.addEventListener('submit', e => {
     e.preventDefault();
     const inv = document.getElementById('inventar-nummer').value.trim();
-    if (!inv) return;
-    const resultArea = document.getElementById('manual-result');
-    resultArea.innerHTML = '<p class="text-muted">Suche läuft…</p>';
-    resultArea.style.display = 'block';
-    try {
-      const resp = await fetch('/geraete/?q=' + encodeURIComponent(inv), {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      });
-      // Redirect to device list with search query
-      window.location.href = '/geraete/?q=' + encodeURIComponent(inv);
-    } catch (e) {
-      resultArea.innerHTML = '<p class="text-muted">Fehler bei der Suche.</p>';
-    }
+    if (inv) window.location.href = '/geraete/?q=' + encodeURIComponent(inv);
   });
+
+  // ─── NFC Scanner ─────────────────────────────────────────────
+  const nfcNotSupported = document.getElementById('nfc-not-supported');
+  const nfcZone         = document.getElementById('nfc-zone');
+  const nfcIcon         = document.getElementById('nfc-icon');
+  const nfcLabel        = document.getElementById('nfc-label');
+  const nfcStartBtn     = document.getElementById('nfc-start-btn');
+  const nfcStopBtn      = document.getElementById('nfc-stop-btn');
+  const nfcResult       = document.getElementById('nfc-result');
+  const nfcResultText   = document.getElementById('nfc-result-text');
+  const nfcResultLink   = document.getElementById('nfc-result-link');
+  const nfcErrorText    = document.getElementById('nfc-error-text');
+  const nfcActions      = document.getElementById('nfc-actions');
+  let nfcReader         = null;
+  let nfcAbort          = null;
+
+  if (!('NDEFReader' in window)) {
+    nfcNotSupported.style.display = 'block';
+    nfcZone.style.display = 'none';
+  } else {
+    nfcStartBtn.addEventListener('click', async () => {
+      nfcErrorText.style.display = 'none';
+      nfcResult.style.display = 'none';
+      nfcIcon.className = 'nfc-icon nfc-icon--scanning';
+      nfcLabel.textContent = 'Warten auf NFC-Tag …';
+      nfcStartBtn.style.display = 'none';
+      nfcStopBtn.style.display = '';
+
+      try {
+        nfcAbort = new AbortController();
+        nfcReader = new NDEFReader();
+        await nfcReader.scan({ signal: nfcAbort.signal });
+
+        nfcReader.addEventListener('reading', ({ message, serialNumber }) => {
+          let value = '';
+          for (const record of message.records) {
+            if (record.recordType === 'url') {
+              const decoder = new TextDecoder();
+              value = decoder.decode(record.data);
+              break;
+            }
+            if (record.recordType === 'text') {
+              const decoder = new TextDecoder(record.encoding || 'utf-8');
+              value = decoder.decode(record.data);
+              break;
+            }
+          }
+          if (!value && serialNumber) value = serialNumber;
+
+          nfcAbort.abort();
+          nfcIcon.className = 'nfc-icon nfc-icon--ok';
+          nfcStartBtn.style.display = '';
+          nfcStopBtn.style.display = 'none';
+
+          const match = value.match(/\/geraete\/(\d+)\//);
+          const numMatch = value.match(/^(\d+)$/);
+          if (match) {
+            const url = '/geraete/' + match[1] + '/';
+            nfcLabel.textContent = 'NFC-Tag erkannt!';
+            nfcResultText.textContent = 'Gerät gefunden – zur Geräteseite';
+            nfcResultLink.href = url;
+            nfcResult.style.display = 'block';
+          } else if (numMatch) {
+            const url = '/geraete/' + numMatch[1] + '/';
+            nfcLabel.textContent = 'NFC-Tag erkannt!';
+            nfcResultText.textContent = 'Gerät #' + numMatch[1];
+            nfcResultLink.href = url;
+            nfcResult.style.display = 'block';
+          } else {
+            nfcIcon.className = 'nfc-icon nfc-icon--error';
+            nfcLabel.textContent = 'Tag konnte keinem Gerät zugeordnet werden.';
+            nfcErrorText.textContent = 'Inhalt: ' + (value || 'leer');
+            nfcErrorText.style.display = 'block';
+          }
+        });
+
+        nfcReader.addEventListener('readingerror', () => {
+          nfcIcon.className = 'nfc-icon nfc-icon--error';
+          nfcLabel.textContent = 'NFC-Tag konnte nicht gelesen werden.';
+          nfcStartBtn.style.display = '';
+          nfcStopBtn.style.display = 'none';
+        });
+
+      } catch (e) {
+        nfcIcon.className = 'nfc-icon nfc-icon--error';
+        nfcLabel.textContent = 'NFC-Fehler';
+        nfcErrorText.textContent = e.message;
+        nfcErrorText.style.display = 'block';
+        nfcStartBtn.style.display = '';
+        nfcStopBtn.style.display = 'none';
+      }
+    });
+
+    nfcStopBtn.addEventListener('click', () => {
+      if (nfcAbort) nfcAbort.abort();
+      nfcIcon.className = 'nfc-icon';
+      nfcLabel.textContent = 'NFC-Scan gestoppt.';
+      nfcStartBtn.style.display = '';
+      nfcStopBtn.style.display = 'none';
+    });
+  }
 })();
 </script>
 {% endblock %}

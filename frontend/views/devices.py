@@ -4,6 +4,7 @@ Device list and device detail pages.
 """
 
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.contrib import messages
 
 from frontend.decorators import login_required
@@ -123,3 +124,23 @@ def device_detail_view(request, device_id: int):
         pass
 
     return render(request, 'frontend/device_detail.html', context)
+
+
+@login_required
+def device_qr_download_view(request, device_id: int):
+    """
+    Proxy GET /api/v1/geraete/{id}/qr-code through Django so the
+    backend JWT token is never exposed to the browser.
+    """
+    client = get_client(request)
+    resp = client.get_qr_code(device_id)
+
+    if resp.status_code == 404:
+        return HttpResponse('Kein QR-Code für dieses Gerät verfügbar.', status=404)
+    if resp.status_code != 200:
+        return HttpResponse('QR-Code konnte nicht geladen werden.', status=502)
+
+    content_type = resp.headers.get('Content-Type', 'image/png')
+    ext = 'png' if 'png' in content_type else 'jpg'
+
+    return HttpResponse(resp.content, content_type=content_type)

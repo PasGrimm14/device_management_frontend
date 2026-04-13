@@ -50,7 +50,7 @@ def admin_device_list_view(request):
     try:
         devices = client.get_devices(
             status=status_filter or None,
-            limit=500,
+            limit=200,
         )
         if search_query:
             q = search_query.lower()
@@ -199,7 +199,7 @@ def admin_user_list_view(request):
     }
 
     try:
-        users = client.get_users(limit=500)
+        users = client.get_users(limit=200)
         if search_query:
             q = search_query.lower()
             users = [

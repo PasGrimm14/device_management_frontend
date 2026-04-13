@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "8050:8050"
+    env_file:
+      - .env
+    environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    restart: unless-stopped

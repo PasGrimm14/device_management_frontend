@@ -93,13 +93,13 @@ class APIClient:
         return self._handle_response(response)
 
     def create_device(self, data: dict) -> dict:
-        """POST /api/v1/geraete/ (Admin)"""
+        """POST /api/v1/geraete/ (Admin) – GeraetCreate JSON"""
         response = self.session.post(self._url('/api/v1/geraete/'), json=data)
         return self._handle_response(response)
 
     def update_device(self, device_id: int, data: dict) -> dict:
         """
-        PATCH /api/v1/geraete/{id} (Admin)
+        PATCH /api/v1/geraete/{id} (Admin) – GeraetUpdate JSON
         Supported fields: name, standort, status, bemerkungen
         """
         response = self.session.patch(self._url(f'/api/v1/geraete/{device_id}'), json=data)
@@ -109,6 +109,13 @@ class APIClient:
         """DELETE /api/v1/geraete/{id} (Admin)"""
         response = self.session.delete(self._url(f'/api/v1/geraete/{device_id}'))
         return self._handle_response(response)
+
+    def get_qr_code(self, device_id: int) -> requests.Response:
+        """
+        GET /api/v1/geraete/{geraet_id}/qr-code
+        Returns the raw requests.Response (binary image) for proxy use.
+        """
+        return self.session.get(self._url(f'/api/v1/geraete/{device_id}/qr-code'))
 
     # -------------------------------------------------------------------------
     # Ausleihen (Loans)

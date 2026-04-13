@@ -207,7 +207,26 @@
         <h2 class="card-title">QR-Code</h2>
       </div>
       <div class="card-body" style="text-align:center">
-        <img src="{{ device.qr_code_url }}" alt="QR-Code für {{ device.name }}" class="qr-image">
+        <img
+          src="/geraete/{{ device.id }}/qr-code/"
+          alt="QR-Code für {{ device.name }}"
+          class="qr-image"
+          style="max-width:200px; width:100%; image-rendering:pixelated"
+        >
+        <p class="form-hint" style="margin-top:.75rem">
+          QR-Code scannen → öffnet diese Geräteseite
+        </p>
+        <a
+          href="/geraete/{{ device.id }}/qr-code/"
+          class="btn btn-ghost btn-sm btn-full"
+          style="margin-top:.75rem"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          QR-Code herunterladen
+        </a>
       </div>
     </div>
     {% endif %}
