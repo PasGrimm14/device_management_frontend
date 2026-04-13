@@ -21,6 +21,9 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+csrf_trusted_env = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8050')
+CSRF_TRUSTED_ORIGINS = csrf_trusted_env.split(',')
+
 # API Backend URL
 API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
 

@@ -9,4 +9,5 @@ services:
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
       - API_BASE_URL=${API_BASE_URL}
       - DEBUG=${DEBUG}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
     restart: unless-stopped
