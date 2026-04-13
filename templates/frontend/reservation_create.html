@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Gerät reservieren – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/geraete/" class="breadcrumb-link">Geräte</a>
+      <span class="breadcrumb-sep">›</span>
+      {% if device %}<a href="/geraete/{{ device.id }}/" class="breadcrumb-link">{{ device.name }}</a>{% endif %}
+      <span class="breadcrumb-sep">›</span>
+      <span>Reservieren</span>
+    </div>
+    <h1 class="page-hero-title">Gerät reservieren</h1>
+    <p class="page-hero-sub">Reservierungsanfrage stellen</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+  <a href="/geraete/" class="btn btn-ghost btn-sm" style="margin-top:1rem">← Zurück</a>
+{% elif device %}
+<div class="form-layout">
+  <div class="form-main">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Reservierungsformular</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/reservierungen/neu/{{ device.id }}/" novalidate>
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label class="form-label">Gerät</label>
+            <div class="form-control form-control--readonly">
+              {{ device.name }}
+              <span class="text-muted"> · {{ device.inventar_nummer }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reserviert_fuer_datum" class="form-label">
+              Reservierungsdatum
+              <span class="form-label-required">*</span>
+            </label>
+            <input
+              type="date"
+              id="reserviert_fuer_datum"
+              name="reserviert_fuer_datum"
+              class="form-control"
+              min="{% now 'Y-m-d' %}"
+              required
+            >
+            <p class="form-hint">Wählen Sie das Datum, für das Sie das Gerät reservieren möchten.</p>
+          </div>
+
+          <div class="form-actions">
+            <a href="/geraete/{{ device.id }}/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">
+              Reservierung bestätigen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sidebar">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Geräteinformation</h2>
+      </div>
+      <div class="card-body">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>Name</dt>
+            <dd>{{ device.name }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Status</dt>
+            <dd>{{ device.status|geraet_status_badge }}</dd>
+          </div>
+          {% if device.hersteller %}
+          <div class="detail-row">
+            <dt>Hersteller</dt>
+            <dd>{{ device.hersteller }}</dd>
+          </div>
+          {% endif %}
+          {% if device.standort %}
+          <div class="detail-row">
+            <dt>Standort</dt>
+            <dd>{{ device.standort }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Hinweis zur Reservierung</h3>
+        <ul class="info-list">
+          <li>Eine Reservierung sichert das Gerät für ein bestimmtes Datum.</li>
+          <li>Sie werden benachrichtigt, wenn das Gerät zur Abholung bereit ist.</li>
+          <li>Nicht abgeholte Reservierungen können storniert werden.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

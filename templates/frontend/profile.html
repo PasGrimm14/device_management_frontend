@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Mein Profil – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Mein Profil</h1>
+    <p class="page-hero-sub">Kontoübersicht und Aktivitäten</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+<div class="detail-layout">
+  <div class="detail-main">
+
+    {# Profile Info #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Kontoinformationen</h2>
+      </div>
+      <div class="card-body">
+        <div class="profile-header">
+          <div class="profile-avatar">
+            {{ profile.name|first|upper }}
+          </div>
+          <div class="profile-info">
+            <h3 class="profile-name">{{ profile.name }}</h3>
+            <span class="profile-role">{{ profile.rolle|rolle_label }}</span>
+          </div>
+        </div>
+        <dl class="detail-list" style="margin-top:1.5rem">
+          <div class="detail-row">
+            <dt>Name</dt>
+            <dd>{{ profile.name|default_dash }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>E-Mail</dt>
+            <dd>{{ profile.email|default_dash }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Shibboleth-ID</dt>
+            <dd>{{ profile.shibboleth_id|default_dash }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Rolle</dt>
+            <dd>{{ profile.rolle|rolle_label }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    {# Recent Loans #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Meine Ausleihen</h2>
+        <a href="/ausleihen/" class="btn btn-ghost btn-sm">Alle anzeigen</a>
+      </div>
+      <div class="card-body">
+        {% if loans %}
+          <div class="list-container list-container--compact">
+            {% for loan in loans|slice:":5" %}
+              <div class="list-item list-item--compact">
+                <div class="list-item-body">
+                  <div class="list-item-title">
+                    {% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}
+                  </div>
+                  <div class="list-item-meta">
+                    {{ loan.startdatum|format_date }}
+                    {% if loan.geplantes_rueckgabedatum %} – {{ loan.geplantes_rueckgabedatum|format_date }}{% endif %}
+                  </div>
+                </div>
+                <div class="list-item-actions">
+                  {{ loan.status|ausleihe_status_badge }}
+                  <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">Keine Ausleihen vorhanden.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Recent Reservations #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Meine Reservierungen</h2>
+        <a href="/reservierungen/" class="btn btn-ghost btn-sm">Alle anzeigen</a>
+      </div>
+      <div class="card-body">
+        {% if reservations %}
+          <div class="list-container list-container--compact">
+            {% for res in reservations|slice:":5" %}
+              <div class="list-item list-item--compact">
+                <div class="list-item-body">
+                  <div class="list-item-title">
+                    {% if res.geraet %}{{ res.geraet.name }}{% else %}Gerät #{{ res.geraet_id }}{% endif %}
+                  </div>
+                  <div class="list-item-meta">
+                    Für {{ res.reserviert_fuer_datum|format_date }}
+                  </div>
+                </div>
+                <div class="list-item-actions">
+                  {{ res.status|reservierung_status_badge }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">Keine Reservierungen vorhanden.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Aktionen</h2>
+      </div>
+      <div class="card-body action-stack">
+        <a href="/geraete/" class="btn btn-primary btn-full">Gerät ausleihen</a>
+        <a href="/ausleihen/" class="btn btn-ghost btn-full">Meine Ausleihen</a>
+        <a href="/reservierungen/" class="btn btn-ghost btn-full">Meine Reservierungen</a>
+        <a href="/scanner/" class="btn btn-ghost btn-full">QR-Scanner</a>
+        <hr class="divider">
+        <form method="post" action="/logout/">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ghost btn-full btn-danger-text">Abmelden</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

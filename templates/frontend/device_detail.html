@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}{{ device.name|default:"Gerät" }} – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+  <a href="/geraete/" class="btn btn-ghost btn-sm" style="margin-top:1rem">← Zurück zur Liste</a>
+{% elif device %}
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/geraete/" class="breadcrumb-link">Geräte</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>{{ device.name }}</span>
+    </div>
+    <div class="page-hero-row">
+      <div>
+        <h1 class="page-hero-title">{{ device.name }}</h1>
+        <p class="page-hero-sub">
+          {{ device.inventar_nummer }}
+          {% if device.kategorie %} · {{ device.kategorie }}{% endif %}
+        </p>
+      </div>
+      {{ device.status|geraet_status_badge }}
+    </div>
+  </div>
+</div>
+
+<div class="detail-layout">
+  {# Main info #}
+  <div class="detail-main">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Geräteinformationen</h2>
+      </div>
+      <div class="card-body">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>Inventarnummer</dt>
+            <dd>{{ device.inventar_nummer }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Name</dt>
+            <dd>{{ device.name }}</dd>
+          </div>
+          {% if device.kategorie %}
+          <div class="detail-row">
+            <dt>Kategorie</dt>
+            <dd>{{ device.kategorie }}</dd>
+          </div>
+          {% endif %}
+          {% if device.hersteller %}
+          <div class="detail-row">
+            <dt>Hersteller</dt>
+            <dd>{{ device.hersteller }}</dd>
+          </div>
+          {% endif %}
+          {% if device.modell %}
+          <div class="detail-row">
+            <dt>Modell</dt>
+            <dd>{{ device.modell }}</dd>
+          </div>
+          {% endif %}
+          {% if device.seriennummer %}
+          <div class="detail-row">
+            <dt>Seriennummer</dt>
+            <dd>{{ device.seriennummer }}</dd>
+          </div>
+          {% endif %}
+          {% if device.standort %}
+          <div class="detail-row">
+            <dt>Standort</dt>
+            <dd>{{ device.standort }}</dd>
+          </div>
+          {% endif %}
+          <div class="detail-row">
+            <dt>Status</dt>
+            <dd>{{ device.status|geraet_status_badge }}</dd>
+          </div>
+          {% if device.anschaffungsdatum %}
+          <div class="detail-row">
+            <dt>Anschaffungsdatum</dt>
+            <dd>{{ device.anschaffungsdatum|format_date }}</dd>
+          </div>
+          {% endif %}
+          {% if device.bemerkungen %}
+          <div class="detail-row">
+            <dt>Bemerkungen</dt>
+            <dd>{{ device.bemerkungen }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    {# Active loan info #}
+    {% if active_loan %}
+    <div class="card card--warn">
+      <div class="card-header">
+        <h2 class="card-title">Aktive Ausleihe</h2>
+        {{ active_loan.status|ausleihe_status_badge }}
+      </div>
+      <div class="card-body">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>Ausgeliehen seit</dt>
+            <dd>{{ active_loan.startdatum|format_date }}</dd>
+          </div>
+          {% if active_loan.geplantes_rueckgabedatum %}
+          <div class="detail-row">
+            <dt>Geplante Rückgabe</dt>
+            <dd>{{ active_loan.geplantes_rueckgabedatum|format_date }}</dd>
+          </div>
+          {% endif %}
+          <div class="detail-row">
+            <dt>Verlängerungen</dt>
+            <dd>{{ active_loan.verlaengerungen_anzahl }}/2</dd>
+          </div>
+        </dl>
+        <div class="action-row">
+          <a href="/ausleihen/{{ active_loan.id }}/" class="btn btn-ghost btn-sm">Ausleihe anzeigen</a>
+          {% if active_loan|can_extend %}
+            <a href="/ausleihen/{{ active_loan.id }}/verlaengern/" class="btn btn-primary btn-sm">Verlängern</a>
+          {% endif %}
+          <form method="post" action="/ausleihen/{{ active_loan.id }}/rueckgabe/" style="display:inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm"
+              onclick="return confirm('Gerät jetzt zurückgeben?')">
+              Zurückgeben
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# Sidebar actions #}
+  <div class="detail-sidebar">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Aktionen</h2>
+      </div>
+      <div class="card-body action-stack">
+        {% if device.status == 'verfügbar' %}
+          <a href="/ausleihen/neu/{{ device.id }}/" class="btn btn-primary btn-full">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            Jetzt ausleihen
+          </a>
+          <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Reservieren
+          </a>
+        {% elif device.status == 'ausgeliehen' %}
+          <div class="status-note status-note--warn">
+            Dieses Gerät ist derzeit ausgeliehen.
+          </div>
+          <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">
+            Für später reservieren
+          </a>
+        {% elif device.status == 'reserviert' %}
+          <div class="status-note status-note--neutral">
+            Dieses Gerät ist reserviert.
+          </div>
+        {% elif device.status == 'defekt' %}
+          <div class="status-note status-note--danger">
+            Dieses Gerät ist als defekt gemeldet.
+          </div>
+        {% elif device.status == 'außer Betrieb' %}
+          <div class="status-note status-note--danger">
+            Dieses Gerät ist außer Betrieb.
+          </div>
+        {% endif %}
+
+        {% if current_user.rolle == 'Administrator' %}
+          <hr class="divider">
+          <a href="/admin/geraete/{{ device.id }}/bearbeiten/" class="btn btn-ghost btn-full">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Gerät bearbeiten
+          </a>
+          <a href="/admin/audit-logs/geraet/{{ device.id }}/" class="btn btn-ghost btn-full">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Audit-Log anzeigen
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if device.qr_code_url %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">QR-Code</h2>
+      </div>
+      <div class="card-body" style="text-align:center">
+        <img src="{{ device.qr_code_url }}" alt="QR-Code für {{ device.name }}" class="qr-image">
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Ausleihe verlängern – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/ausleihen/" class="breadcrumb-link">Ausleihen</a>
+      <span class="breadcrumb-sep">›</span>
+      {% if loan %}<a href="/ausleihen/{{ loan.id }}/" class="breadcrumb-link">Ausleihe #{{ loan.id }}</a>{% endif %}
+      <span class="breadcrumb-sep">›</span>
+      <span>Verlängern</span>
+    </div>
+    <h1 class="page-hero-title">Ausleihe verlängern</h1>
+    <p class="page-hero-sub">Verlängerung um 14 Tage beantragen</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+  <a href="/ausleihen/" class="btn btn-ghost btn-sm" style="margin-top:1rem">← Zurück</a>
+{% elif loan %}
+<div class="form-layout">
+  <div class="form-main">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Verlängerung bestätigen</h2>
+      </div>
+      <div class="card-body">
+        <p class="confirm-text">
+          Möchten Sie die Ausleihe von
+          <strong>{% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}</strong>
+          um <strong>14 Tage</strong> verlängern?
+        </p>
+
+        <dl class="detail-list" style="margin: 1.5rem 0">
+          <div class="detail-row">
+            <dt>Aktuelles Rückgabedatum</dt>
+            <dd>{{ loan.geplantes_rueckgabedatum|format_date|default:"nicht angegeben" }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Bisherige Verlängerungen</dt>
+            <dd>{{ loan.verlaengerungen_anzahl }} von 2</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Verbleibende Verlängerungen</dt>
+            <dd>{{ loan.verlaengerungen_anzahl|add:"-2"|abs }} noch möglich</dd>
+          </div>
+        </dl>
+
+        {% if not loan|can_extend %}
+          <div class="alert alert--warning">
+            Die maximale Anzahl an Verlängerungen (2) wurde bereits erreicht.
+          </div>
+        {% else %}
+          <form method="post" action="/ausleihen/{{ loan.id }}/verlaengern/">
+            {% csrf_token %}
+            <div class="form-actions">
+              <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost">Abbrechen</a>
+              <button type="submit" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Verlängerung bestätigen
+              </button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sidebar">
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Hinweis</h3>
+        <ul class="info-list">
+          <li>Jede Verlängerung fügt 14 Tage zum geplanten Rückgabedatum hinzu.</li>
+          <li>Maximal 2 Verlängerungen pro Ausleihe möglich.</li>
+          <li>Bei längerfristigem Bedarf bitte erneut ausleihen.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

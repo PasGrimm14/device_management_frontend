@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}QR-Scanner – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">QR-Scanner</h1>
+    <p class="page-hero-sub">Gerät per QR-Code scannen</p>
+  </div>
+</div>
+
+<div class="scanner-layout">
+  <div class="card scanner-card">
+    <div class="card-header">
+      <h2 class="card-title">Kamera-Scanner</h2>
+    </div>
+    <div class="card-body">
+      <div id="scanner-container" class="scanner-container">
+        <div id="scanner-placeholder" class="scanner-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+            <polyline points="23 7 23 1 17 1"/><line x1="23" y1="1" x2="14" y2="10"/>
+            <polyline points="1 17 1 23 7 23"/><line x1="1" y1="23" x2="10" y2="14"/>
+          </svg>
+          <p>Kamera aktivieren, um QR-Code zu scannen</p>
+          <button id="start-scanner" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M23 7L23 1 17 1M1 17L1 23 7 23M16 8 23 1M8 16 1 23"/>
+            </svg>
+            Scanner starten
+          </button>
+        </div>
+        <video id="scanner-video" class="scanner-video" style="display:none" playsinline></video>
+        <canvas id="scanner-canvas" style="display:none"></canvas>
+      </div>
+
+      <div id="scanner-result" class="scanner-result" style="display:none">
+        <div class="scanner-result-icon scanner-result-icon--ok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <p id="scanner-result-text" class="scanner-result-text"></p>
+        <a id="scanner-result-link" href="#" class="btn btn-primary btn-sm">Gerät anzeigen</a>
+        <button id="scan-again" class="btn btn-ghost btn-sm">Erneut scannen</button>
+      </div>
+
+      <div id="scanner-error" class="scanner-result" style="display:none">
+        <div class="scanner-result-icon scanner-result-icon--danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </div>
+        <p id="scanner-error-text" class="scanner-result-text"></p>
+        <button id="scan-again-error" class="btn btn-ghost btn-sm">Erneut versuchen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Manuell suchen</h2>
+    </div>
+    <div class="card-body">
+      <p class="text-muted" style="margin-bottom:1rem">
+        Alternativ können Sie die Inventarnummer direkt eingeben:
+      </p>
+      <form id="manual-search-form" class="manual-search-form">
+        <div class="form-group">
+          <label for="inventar-nummer" class="form-label">Inventarnummer</label>
+          <input
+            type="text"
+            id="inventar-nummer"
+            class="form-control"
+            placeholder="z.B. INV-2024-001"
+            autocomplete="off"
+          >
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Gerät suchen</button>
+      </form>
+      <div id="manual-result" style="display:none; margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <div class="card card--info">
+    <div class="card-body">
+      <h3 class="info-title">So funktioniert's</h3>
+      <ul class="info-list">
+        <li>Klicken Sie auf „Scanner starten" und erlauben Sie den Kamerazugriff.</li>
+        <li>Halten Sie die Kamera auf den QR-Code des Geräts.</li>
+        <li>Der Scanner erkennt den Code automatisch und öffnet die Geräteseite.</li>
+        <li>Alternativ: Inventarnummer manuell eingeben.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const startBtn = document.getElementById('start-scanner');
+  const placeholder = document.getElementById('scanner-placeholder');
+  const video = document.getElementById('scanner-video');
+  const canvas = document.getElementById('scanner-canvas');
+  const resultDiv = document.getElementById('scanner-result');
+  const errorDiv = document.getElementById('scanner-error');
+  const resultText = document.getElementById('scanner-result-text');
+  const resultLink = document.getElementById('scanner-result-link');
+  const errorText = document.getElementById('scanner-error-text');
+  let stream = null;
+  let scanning = false;
+
+  function stopScanner() {
+    scanning = false;
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    video.style.display = 'none';
+    video.srcObject = null;
+  }
+
+  function showResult(url, label) {
+    stopScanner();
+    placeholder.style.display = 'none';
+    resultText.textContent = label || url;
+    resultLink.href = url;
+    resultDiv.style.display = 'flex';
+    errorDiv.style.display = 'none';
+  }
+
+  function showError(msg) {
+    stopScanner();
+    placeholder.style.display = 'none';
+    errorText.textContent = msg;
+    errorDiv.style.display = 'flex';
+    resultDiv.style.display = 'none';
+  }
+
+  function resetScanner() {
+    placeholder.style.display = 'flex';
+    resultDiv.style.display = 'none';
+    errorDiv.style.display = 'none';
+    video.style.display = 'none';
+  }
+
+  // Scan loop using BarcodeDetector if available, else canvas decode
+  async function scanFrame() {
+    if (!scanning) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      if ('BarcodeDetector' in window) {
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const codes = await detector.detect(canvas);
+          if (codes.length > 0) {
+            handleQRValue(codes[0].rawValue);
+            return;
+          }
+        } catch (e) {}
+      }
+    }
+    if (scanning) requestAnimationFrame(scanFrame);
+  }
+
+  function handleQRValue(value) {
+    // Expect URL like /geraete/123/ or a device id
+    const match = value.match(/\/geraete\/(\d+)\//);
+    if (match) {
+      showResult('/geraete/' + match[1] + '/', 'Gerät gefunden – zur Geräteseite');
+    } else if (/^\d+$/.test(value.trim())) {
+      showResult('/geraete/' + value.trim() + '/', 'Gerät #' + value.trim());
+    } else if (value.startsWith('http')) {
+      showResult(value, 'QR-Code erkannt');
+    } else {
+      showError('QR-Code konnte nicht einem Gerät zugeordnet werden: ' + value);
+    }
+  }
+
+  if (startBtn) {
+    startBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        await video.play();
+        placeholder.style.display = 'none';
+        video.style.display = 'block';
+        scanning = true;
+        requestAnimationFrame(scanFrame);
+      } catch (e) {
+        showError('Kamerazugriff nicht möglich: ' + e.message);
+      }
+    });
+  }
+
+  document.getElementById('scan-again')?.addEventListener('click', resetScanner);
+  document.getElementById('scan-again-error')?.addEventListener('click', resetScanner);
+
+  // Manual search
+  document.getElementById('manual-search-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const inv = document.getElementById('inventar-nummer').value.trim();
+    if (!inv) return;
+    const resultArea = document.getElementById('manual-result');
+    resultArea.innerHTML = '<p class="text-muted">Suche läuft…</p>';
+    resultArea.style.display = 'block';
+    try {
+      const resp = await fetch('/geraete/?q=' + encodeURIComponent(inv), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      // Redirect to device list with search query
+      window.location.href = '/geraete/?q=' + encodeURIComponent(inv);
+    } catch (e) {
+      resultArea.innerHTML = '<p class="text-muted">Fehler bei der Suche.</p>';
+    }
+  });
+})();
+</script>
+{% endblock %}

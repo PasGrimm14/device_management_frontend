@@ -1,0 +1,47 @@
+{% load static %}
+{% load frontend_tags %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}DHBW Gerätemanagement{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  {% include "includes/topbar.html" %}
+
+  <div class="layout">
+    {% if request.api_token %}
+      {% include "includes/sidebar.html" %}
+    {% endif %}
+
+    <main class="main-content {% if not request.api_token %}main-content--full{% endif %}">
+      {# Django messages #}
+      {% if messages %}
+        <div class="messages-container">
+          {% for message in messages %}
+            <div class="alert alert--{{ message.tags }}">
+              <span>{{ message }}</span>
+              <button class="alert-close" onclick="this.parentElement.remove()" aria-label="Schließen">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% if request.api_token %}
+    {% include "includes/mobile_nav.html" %}
+  {% endif %}
+
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

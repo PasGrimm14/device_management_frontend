@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Benutzerverwaltung – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Benutzerverwaltung</h1>
+    <p class="page-hero-sub">Administration · Alle Benutzer verwalten</p>
+  </div>
+</div>
+
+{# Search #}
+<div class="filter-bar">
+  <form method="get" action="/admin/benutzer/" class="filter-form">
+    <div class="filter-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="filter-search-icon">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" name="q" class="filter-input" placeholder="Benutzer suchen…" value="{{ search_query }}">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Suchen</button>
+    {% if search_query %}
+      <a href="/admin/benutzer/" class="btn btn-ghost btn-sm">Zurücksetzen</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if users %}
+  <p class="results-count">{{ users|length }} Benutzer</p>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>E-Mail</th>
+          <th>Shibboleth-ID</th>
+          <th>Rolle</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr {% if user.id == current_user.id %}class="table-row--highlight"{% endif %}>
+          <td>
+            <div class="user-cell">
+              <div class="user-avatar-sm">{{ user.name|first|upper }}</div>
+              <span class="table-bold">{{ user.name }}</span>
+              {% if user.id == current_user.id %}
+                <span class="badge badge-neutral" style="font-size:0.7rem">Ich</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>{{ user.email }}</td>
+          <td class="table-mono">{{ user.shibboleth_id }}</td>
+          <td>
+            {% if user.rolle == 'Administrator' %}
+              <span class="badge badge-warn">Administrator</span>
+            {% else %}
+              <span class="badge badge-neutral">Studierende/Mitarbeitende</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions">
+              {# Role change form #}
+              <form method="post" action="/admin/benutzer/{{ user.id }}/rolle/" style="display:inline">
+                {% csrf_token %}
+                <select name="rolle" class="form-select-inline"
+                  onchange="if(confirm('Rolle von {{ user.name }} ändern?')) this.form.submit()">
+                  {% for val, label in roles %}
+                    <option value="{{ val }}" {% if user.rolle == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+
+              {# Delete – disabled for self #}
+              {% if user.id != current_user.id %}
+                <form method="post" action="/admin/benutzer/{{ user.id }}/loeschen/" style="display:inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-xs" title="Benutzer löschen"
+                    onclick="return confirm('Benutzer \"{{ user.name }}\" wirklich löschen?')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/>
+                      <path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                </form>
+              {% else %}
+                <button class="btn btn-ghost btn-xs" disabled title="Eigenes Konto kann nicht gelöscht werden">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  </svg>
+                </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <p>Keine Benutzer gefunden.</p>
+  </div>
+{% endif %}
+{% endblock %}

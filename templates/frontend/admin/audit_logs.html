@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Audit-Logs – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/admin/audit-logs/" class="breadcrumb-link">Audit-Logs</a>
+      {% if device %}
+        <span class="breadcrumb-sep">›</span>
+        <span>{{ device.name }}</span>
+      {% endif %}
+    </div>
+    <h1 class="page-hero-title">
+      {% if device %}Audit-Log: {{ device.name }}{% else %}Audit-Logs{% endif %}
+    </h1>
+    <p class="page-hero-sub">Administration · Systemaktivitäten</p>
+  </div>
+</div>
+
+{% if device %}
+  <div class="filter-bar">
+    <a href="/admin/audit-logs/" class="btn btn-ghost btn-sm">← Alle Logs</a>
+    <a href="/geraete/{{ device.id }}/" class="btn btn-ghost btn-sm">Gerät anzeigen</a>
+    <a href="/admin/geraete/{{ device.id }}/bearbeiten/" class="btn btn-ghost btn-sm">Gerät bearbeiten</a>
+  </div>
+{% endif %}
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if logs %}
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Zeitstempel</th>
+          <th>Aktion</th>
+          <th>Benutzer-ID</th>
+          {% if not device %}<th>Geräte-ID</th>{% endif %}
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="table-mono table-nowrap">{{ log.zeitstempel|format_datetime }}</td>
+          <td>
+            <span class="badge
+              {% if log.aktion == 'ausleihe' %}badge-warn
+              {% elif log.aktion == 'rückgabe' %}badge-ok
+              {% elif log.aktion == 'reservierung' %}badge-neutral
+              {% elif log.aktion == 'angelegt' %}badge-ok
+              {% elif log.aktion == 'verlängerung' %}badge-warn
+              {% elif log.aktion == 'status_änderung' %}badge-neutral
+              {% else %}badge-neutral{% endif %}
+            ">{{ log.aktion|aktion_label }}</span>
+          </td>
+          <td class="table-mono">{{ log.nutzer_id|default_dash }}</td>
+          {% if not device %}
+          <td class="table-mono">
+            {% if log.geraet_id %}
+              <a href="/admin/audit-logs/geraet/{{ log.geraet_id }}/" class="link">#{{ log.geraet_id }}</a>
+            {% else %}–{% endif %}
+          </td>
+          {% endif %}
+          <td class="table-details">{{ log.details|default_dash }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Pagination (global logs only) #}
+  {% if not device %}
+    <div class="pagination">
+      {% if has_prev %}
+        <a href="?page={{ page|add:'-1' }}" class="btn btn-ghost btn-sm">← Vorherige</a>
+      {% endif %}
+      <span class="pagination-info">Seite {{ page }}</span>
+      {% if has_next %}
+        <a href="?page={{ page|add:'1' }}" class="btn btn-ghost btn-sm">Nächste →</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+    <p>Keine Audit-Log-Einträge vorhanden.</p>
+  </div>
+{% endif %}
+{% endblock %}
