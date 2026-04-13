@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Geräte – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Geräte</h1>
+    <p class="page-hero-sub">Alle verfügbaren Geräte im Überblick</p>
+  </div>
+</div>
+
+{# Filter Bar #}
+<div class="filter-bar">
+  <form method="get" action="/geraete/" class="filter-form">
+    <div class="filter-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="filter-search-icon">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        name="q"
+        class="filter-input"
+        placeholder="Gerät suchen…"
+        value="{{ search_query }}"
+      >
+    </div>
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      {% for val, label in statuses %}
+        <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% if kategorien %}
+      <select name="kategorie" class="filter-select" onchange="this.form.submit()">
+        <option value="">Alle Kategorien</option>
+        {% for kat in kategorien %}
+          <option value="{{ kat }}" {% if kat == kategorie_filter %}selected{% endif %}>{{ kat }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+    <button type="submit" class="btn btn-primary btn-sm">Suchen</button>
+    {% if status_filter or kategorie_filter or search_query %}
+      <a href="/geraete/" class="btn btn-ghost btn-sm">Zurücksetzen</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{# Results count #}
+{% if devices %}
+  <p class="results-count">{{ devices|length }} Gerät{{ devices|length|pluralize:",e" }} gefunden</p>
+{% endif %}
+
+{# Device Grid #}
+{% if devices %}
+  <div class="device-grid">
+    {% for device in devices %}
+      <a href="/geraete/{{ device.id }}/" class="device-card">
+        <div class="device-card-header">
+          <div class="device-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          {{ device.status|geraet_status_badge }}
+        </div>
+        <div class="device-card-body">
+          <h3 class="device-card-name">{{ device.name }}</h3>
+          {% if device.kategorie %}
+            <span class="device-card-category">{{ device.kategorie }}</span>
+          {% endif %}
+          <p class="device-card-meta">
+            {% if device.hersteller %}{{ device.hersteller }}{% endif %}
+            {% if device.hersteller and device.modell %} · {% endif %}
+            {% if device.modell %}{{ device.modell }}{% endif %}
+            {% if not device.hersteller and not device.modell %}Keine weiteren Angaben{% endif %}
+          </p>
+          {% if device.standort %}
+            <p class="device-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ device.standort }}
+            </p>
+          {% endif %}
+        </div>
+        <div class="device-card-footer">
+          <span class="device-card-inv">{{ device.inventar_nummer }}</span>
+          {% if device.status == 'verfügbar' %}
+            <span class="device-card-action">Ausleihen →</span>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+    <p>Keine Geräte gefunden.</p>
+    {% if status_filter or kategorie_filter or search_query %}
+      <a href="/geraete/" class="btn btn-ghost btn-sm">Filter zurücksetzen</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

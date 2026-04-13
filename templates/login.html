@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anmelden – DHBW Gerätemanagement</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="login-page">
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <span class="logo-d">D</span><span class="logo-h">H</span><span class="logo-b">B</span><span class="logo-w">W</span>
+        </div>
+        <h1 class="login-title">Gerätemanagement</h1>
+        <p class="login-subtitle">DHBW Heilbronn</p>
+      </div>
+
+      {% if messages %}
+        <div class="login-messages">
+          {% for message in messages %}
+            <div class="alert alert--{{ message.tags }}">
+              <span>{{ message }}</span>
+              <button class="alert-close" onclick="this.parentElement.remove()" aria-label="Schließen">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" action="/login/" class="login-form" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="shibboleth_id" class="form-label">Shibboleth-ID</label>
+          <input
+            type="text"
+            id="shibboleth_id"
+            name="shibboleth_id"
+            class="form-control"
+            placeholder="z.B. s123456"
+            value="{{ shibboleth_id|default:'' }}"
+            required
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="name" class="form-label">Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="form-control"
+            placeholder="Vor- und Nachname"
+            value="{{ name|default:'' }}"
+            required
+            autocomplete="name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">E-Mail-Adresse</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-control"
+            placeholder="vorname.nachname@student.dhbw-heilbronn.de"
+            value="{{ email|default:'' }}"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">
+          Anmelden
+        </button>
+      </form>
+
+      <p class="login-note">
+        Diese Anmeldung nutzt die DHBW-Zugangsdaten im lokalen Testmodus.
+        Im produktiven Betrieb erfolgt die Authentifizierung über Shibboleth SSO.
+      </p>
+    </div>
+  </div>
+
+  <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hilfe – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Hilfe &amp; FAQ</h1>
+    <p class="page-hero-sub">Häufig gestellte Fragen und Nutzungshinweise</p>
+  </div>
+</div>
+
+<div class="help-layout">
+  <div class="help-main">
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Erste Schritte</h2>
+      </div>
+      <div class="card-body">
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary class="faq-question">Wie leihe ich ein Gerät aus?</summary>
+            <div class="faq-answer">
+              <p>Navigieren Sie zu <a href="/geraete/" class="link">Geräte</a>, wählen Sie ein verfügbares Gerät aus und klicken Sie auf „Jetzt ausleihen". Geben Sie optional ein geplantes Rückgabedatum an und bestätigen Sie die Ausleihe.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question">Wie verlängere ich eine Ausleihe?</summary>
+            <div class="faq-answer">
+              <p>Öffnen Sie Ihre <a href="/ausleihen/" class="link">Ausleihen</a> und klicken Sie bei der gewünschten Ausleihe auf „Verlängern". Jede Verlängerung fügt 14 Tage hinzu. Maximal 2 Verlängerungen pro Ausleihe sind möglich.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question">Wie gebe ich ein Gerät zurück?</summary>
+            <div class="faq-answer">
+              <p>Öffnen Sie die entsprechende Ausleihe in <a href="/ausleihen/" class="link">Ausleihen</a> und klicken Sie auf „Gerät zurückgeben". Bestätigen Sie die Rückgabe im Dialog. Das Gerät wird anschließend als verfügbar markiert.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question">Wie reserviere ich ein Gerät?</summary>
+            <div class="faq-answer">
+              <p>Wählen Sie ein Gerät aus der <a href="/geraete/" class="link">Geräteliste</a> aus und klicken Sie auf „Reservieren". Wählen Sie das gewünschte Datum und bestätigen Sie die Reservierung.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question">Wie storniere ich eine Reservierung?</summary>
+            <div class="faq-answer">
+              <p>Öffnen Sie Ihre <a href="/reservierungen/" class="link">Reservierungen</a> und klicken Sie bei der gewünschten Reservierung auf „Stornieren". Bestätigen Sie die Stornierung.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Gerätestatus</h2>
+      </div>
+      <div class="card-body">
+        <div class="status-legend">
+          <div class="status-legend-item">
+            <span class="badge badge-ok">Verfügbar</span>
+            <p>Das Gerät kann sofort ausgeliehen werden.</p>
+          </div>
+          <div class="status-legend-item">
+            <span class="badge badge-warn">Ausgeliehen</span>
+            <p>Das Gerät ist derzeit ausgeliehen. Sie können es für ein späteres Datum reservieren.</p>
+          </div>
+          <div class="status-legend-item">
+            <span class="badge badge-neutral">Reserviert</span>
+            <p>Das Gerät ist für einen bestimmten Zeitraum reserviert.</p>
+          </div>
+          <div class="status-legend-item">
+            <span class="badge badge-danger">Defekt</span>
+            <p>Das Gerät ist defekt und kann nicht ausgeliehen werden.</p>
+          </div>
+          <div class="status-legend-item">
+            <span class="badge badge-danger">Außer Betrieb</span>
+            <p>Das Gerät ist außer Betrieb und steht nicht zur Verfügung.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">QR-Scanner</h2>
+      </div>
+      <div class="card-body">
+        <p>Mit dem integrierten <a href="/scanner/" class="link">QR-Scanner</a> können Sie Geräte direkt über ihren QR-Code aufrufen. Halten Sie die Kamera auf den QR-Code des Geräts, um direkt zur Geräteseite zu gelangen.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Kontakt &amp; Support</h2>
+      </div>
+      <div class="card-body">
+        <p>Bei Fragen oder Problemen wenden Sie sich bitte an:</p>
+        <ul class="info-list">
+          <li>IT-Support DHBW Heilbronn: <a href="mailto:it-support@dhbw-heilbronn.de" class="link">it-support@dhbw-heilbronn.de</a></li>
+          <li>Bei defekten Geräten bitte sofort dem Verantwortlichen melden.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="help-sidebar">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Schnelllinks</h2>
+      </div>
+      <div class="card-body action-stack">
+        <a href="/geraete/" class="btn btn-ghost btn-full">Alle Geräte</a>
+        <a href="/ausleihen/" class="btn btn-ghost btn-full">Meine Ausleihen</a>
+        <a href="/reservierungen/" class="btn btn-ghost btn-full">Reservierungen</a>
+        <a href="/scanner/" class="btn btn-ghost btn-full">QR-Scanner</a>
+        <a href="/profil/" class="btn btn-ghost btn-full">Mein Profil</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Ausleihen – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Ausleihen</h1>
+    <p class="page-hero-sub">Übersicht Ihrer Geräteausleihen</p>
+  </div>
+</div>
+
+{# Status Filter Tabs #}
+<div class="tab-bar">
+  <a href="/ausleihen/" class="tab {% if not status_filter %}tab--active{% endif %}">Alle</a>
+  <a href="/ausleihen/?status=aktiv" class="tab {% if status_filter == 'aktiv' %}tab--active{% endif %}">Aktiv</a>
+  <a href="/ausleihen/?status=%C3%BCberf%C3%A4llig" class="tab tab--danger {% if status_filter == 'überfällig' %}tab--active{% endif %}">Überfällig</a>
+  <a href="/ausleihen/?status=abgeschlossen" class="tab {% if status_filter == 'abgeschlossen' %}tab--active{% endif %}">Abgeschlossen</a>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if loans %}
+  <div class="list-container">
+    {% for loan in loans %}
+      <div class="list-item {% if loan.status == 'überfällig' %}list-item--danger{% endif %}">
+        <div class="list-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+        </div>
+        <div class="list-item-body">
+          <div class="list-item-title">
+            {% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}
+          </div>
+          <div class="list-item-meta">
+            <span>Seit {{ loan.startdatum|format_date }}</span>
+            {% if loan.geplantes_rueckgabedatum %}
+              <span>· Rückgabe: {{ loan.geplantes_rueckgabedatum|format_date }}</span>
+            {% endif %}
+            <span>· Verlängerungen: {{ loan.verlaengerungen_anzahl }}/2</span>
+          </div>
+        </div>
+        <div class="list-item-actions">
+          {{ loan.status|ausleihe_status_badge }}
+          <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
+          {% if loan.status in 'aktiv,überfällig' %}
+            {% if loan|can_extend %}
+              <a href="/ausleihen/{{ loan.id }}/verlaengern/" class="btn btn-ghost btn-sm">Verlängern</a>
+            {% endif %}
+            <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm"
+                onclick="return confirm('Gerät jetzt zurückgeben?')">
+                Zurückgeben
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    </svg>
+    <p>Keine Ausleihen vorhanden.</p>
+    <a href="/geraete/" class="btn btn-primary btn-sm">Gerät ausleihen</a>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Reservierungen – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Reservierungen</h1>
+    <p class="page-hero-sub">Übersicht Ihrer Gerätereservierungen</p>
+  </div>
+</div>
+
+{# Status Filter Tabs #}
+<div class="tab-bar">
+  <a href="/reservierungen/" class="tab {% if not status_filter %}tab--active{% endif %}">Alle</a>
+  <a href="/reservierungen/?status=aktiv" class="tab {% if status_filter == 'aktiv' %}tab--active{% endif %}">Aktiv</a>
+  <a href="/reservierungen/?status=erf%C3%BCllt" class="tab {% if status_filter == 'erfüllt' %}tab--active{% endif %}">Erfüllt</a>
+  <a href="/reservierungen/?status=storniert" class="tab {% if status_filter == 'storniert' %}tab--active{% endif %}">Storniert</a>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if reservations %}
+  <div class="list-container">
+    {% for reservation in reservations %}
+      <div class="list-item">
+        <div class="list-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="list-item-body">
+          <div class="list-item-title">
+            {% if reservation.geraet %}{{ reservation.geraet.name }}{% else %}Gerät #{{ reservation.geraet_id }}{% endif %}
+          </div>
+          <div class="list-item-meta">
+            <span>Reserviert für {{ reservation.reserviert_fuer_datum|format_date }}</span>
+            <span>· Erstellt am {{ reservation.erstellt_am|format_date }}</span>
+          </div>
+        </div>
+        <div class="list-item-actions">
+          {{ reservation.status|reservierung_status_badge }}
+          {% if reservation.geraet_id %}
+            <a href="/geraete/{{ reservation.geraet_id }}/" class="btn btn-ghost btn-sm">Gerät</a>
+          {% endif %}
+          {% if reservation.status == 'aktiv' %}
+            <form method="post" action="/reservierungen/{{ reservation.id }}/stornieren/" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm"
+                onclick="return confirm('Reservierung wirklich stornieren?')">
+                Stornieren
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <p>Keine Reservierungen vorhanden.</p>
+    <a href="/geraete/" class="btn btn-primary btn-sm">Gerät reservieren</a>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Gerät ausleihen – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/geraete/" class="breadcrumb-link">Geräte</a>
+      <span class="breadcrumb-sep">›</span>
+      {% if device %}<a href="/geraete/{{ device.id }}/" class="breadcrumb-link">{{ device.name }}</a>{% endif %}
+      <span class="breadcrumb-sep">›</span>
+      <span>Ausleihen</span>
+    </div>
+    <h1 class="page-hero-title">Gerät ausleihen</h1>
+    <p class="page-hero-sub">Ausleihantrag stellen</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+  <a href="/geraete/" class="btn btn-ghost btn-sm" style="margin-top:1rem">← Zurück</a>
+{% elif device %}
+<div class="form-layout">
+  <div class="form-main">
+    {% if device.status != 'verfügbar' %}
+      <div class="alert alert--warning">
+        Dieses Gerät ist aktuell nicht verfügbar (Status: {{ device.status|geraet_status_badge }}).
+        Eine Ausleihe ist möglicherweise nicht möglich.
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Ausleihformular</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/ausleihen/neu/{{ device.id }}/" novalidate>
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label class="form-label">Gerät</label>
+            <div class="form-control form-control--readonly">
+              {{ device.name }}
+              <span class="text-muted"> · {{ device.inventar_nummer }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="geplantes_rueckgabedatum" class="form-label">
+              Geplantes Rückgabedatum
+              <span class="form-label-hint">(optional)</span>
+            </label>
+            <input
+              type="date"
+              id="geplantes_rueckgabedatum"
+              name="geplantes_rueckgabedatum"
+              class="form-control"
+              min="{% now 'Y-m-d' %}"
+            >
+            <p class="form-hint">Lassen Sie das Feld frei, wenn Sie noch kein Datum angeben möchten.</p>
+          </div>
+
+          <div class="form-actions">
+            <a href="/geraete/{{ device.id }}/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">
+              Ausleihe bestätigen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sidebar">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Geräteinformation</h2>
+      </div>
+      <div class="card-body">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>Name</dt>
+            <dd>{{ device.name }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Status</dt>
+            <dd>{{ device.status|geraet_status_badge }}</dd>
+          </div>
+          {% if device.hersteller %}
+          <div class="detail-row">
+            <dt>Hersteller</dt>
+            <dd>{{ device.hersteller }}</dd>
+          </div>
+          {% endif %}
+          {% if device.modell %}
+          <div class="detail-row">
+            <dt>Modell</dt>
+            <dd>{{ device.modell }}</dd>
+          </div>
+          {% endif %}
+          {% if device.standort %}
+          <div class="detail-row">
+            <dt>Standort</dt>
+            <dd>{{ device.standort }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Ausleihregeln</h3>
+        <ul class="info-list">
+          <li>Ausleihe kann bis zu 2× um je 14 Tage verlängert werden.</li>
+          <li>Gerät bitte pfleglich behandeln.</li>
+          <li>Bei Schäden bitte sofort melden.</li>
+          <li>Rückgabe am vereinbarten Datum erforderlich.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

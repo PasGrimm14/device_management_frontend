@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Dashboard – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1 class="page-hero-title">Willkommen, {{ current_user.name|default:"Benutzer" }}</h1>
+    <p class="page-hero-sub">DHBW Heilbronn · Gerätemanagement · Überblick</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{# Stats Grid #}
+<section class="stats-grid">
+  <div class="stat-card stat-card--ok">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ stats.verfuegbar }}</span>
+      <span class="stat-label">Verfügbare Geräte</span>
+    </div>
+  </div>
+
+  <div class="stat-card stat-card--warn">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ stats.ausgeliehen }}</span>
+      <span class="stat-label">Ausgeliehene Geräte</span>
+    </div>
+  </div>
+
+  <div class="stat-card stat-card--neutral">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ stats.reserviert }}</span>
+      <span class="stat-label">Reservierungen</span>
+    </div>
+  </div>
+
+  <div class="stat-card {% if overdue_count > 0 %}stat-card--danger{% else %}stat-card--neutral{% endif %}">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ overdue_count }}</span>
+      <span class="stat-label">Überfällige Ausleihen</span>
+    </div>
+  </div>
+</section>
+
+{# Active Loans Section #}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Meine aktiven Ausleihen</h2>
+    <a href="/ausleihen/" class="btn btn-ghost btn-sm">Alle anzeigen</a>
+  </div>
+
+  {% if active_loans %}
+    <div class="loan-list">
+      {% for loan in active_loans %}
+        <div class="loan-item">
+          <div class="loan-item-info">
+            <span class="loan-item-name">
+              {% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}
+            </span>
+            <span class="loan-item-meta">
+              Ausgeliehen seit {{ loan.startdatum|format_date }}
+              {% if loan.geplantes_rueckgabedatum %}
+                · Rückgabe bis {{ loan.geplantes_rueckgabedatum|format_date }}
+              {% endif %}
+            </span>
+          </div>
+          <div class="loan-item-actions">
+            {{ loan.status|ausleihe_status_badge }}
+            <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+      <p>Keine aktiven Ausleihen vorhanden.</p>
+      <a href="/geraete/" class="btn btn-primary btn-sm">Gerät ausleihen</a>
+    </div>
+  {% endif %}
+</section>
+
+{# Available Devices Section #}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Verfügbare Geräte</h2>
+    <a href="/geraete/?status=verf%C3%BCgbar" class="btn btn-ghost btn-sm">Alle verfügbaren</a>
+  </div>
+
+  {% if recent_devices %}
+    <div class="device-grid">
+      {% for device in recent_devices %}
+        <a href="/geraete/{{ device.id }}/" class="device-card">
+          <div class="device-card-header">
+            <div class="device-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            {{ device.status|geraet_status_badge }}
+          </div>
+          <div class="device-card-body">
+            <h3 class="device-card-name">{{ device.name }}</h3>
+            <p class="device-card-meta">
+              {% if device.hersteller %}{{ device.hersteller }}{% endif %}
+              {% if device.hersteller and device.modell %} · {% endif %}
+              {% if device.modell %}{{ device.modell }}{% endif %}
+            </p>
+            {% if device.standort %}
+              <p class="device-card-location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                {{ device.standort }}
+              </p>
+            {% endif %}
+          </div>
+          <div class="device-card-footer">
+            <span class="device-card-inv">{{ device.inventar_nummer }}</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>Keine Geräte verfügbar.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

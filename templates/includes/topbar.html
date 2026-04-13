@@ -1,0 +1,47 @@
+{% load static %}
+{% load frontend_tags %}
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/" class="topbar-brand">
+      <div class="topbar-logo">
+        <span class="logo-d">D</span><span class="logo-h">H</span><span class="logo-b">B</span><span class="logo-w">W</span>
+      </div>
+      <div class="topbar-title">
+        <span class="topbar-title-main">Gerätemanagement</span>
+        <span class="topbar-title-sub">DHBW Heilbronn</span>
+      </div>
+    </a>
+
+    {% if request.api_token %}
+      <nav class="topbar-nav">
+        <a href="/" class="topbar-nav-link {% if request.path == '/' %}active{% endif %}">Dashboard</a>
+        <a href="/geraete/" class="topbar-nav-link {% if '/geraete/' in request.path %}active{% endif %}">Geräte</a>
+        <a href="/ausleihen/" class="topbar-nav-link {% if '/ausleihen/' in request.path %}active{% endif %}">Ausleihen</a>
+        <a href="/reservierungen/" class="topbar-nav-link {% if '/reservierungen/' in request.path %}active{% endif %}">Reservierungen</a>
+      </nav>
+
+      <div class="topbar-user">
+        <a href="/profil/" class="topbar-user-link" title="Mein Profil">
+          <div class="topbar-avatar">
+            {{ request.current_user.name|first|upper }}
+          </div>
+          <span class="topbar-user-name">{{ request.current_user.name }}</span>
+        </a>
+        <form method="post" action="/logout/" class="topbar-logout-form">
+          {% csrf_token %}
+          <button type="submit" class="topbar-logout-btn" title="Abmelden">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    {% else %}
+      <div class="topbar-actions">
+        <a href="/login/" class="btn btn-primary btn-sm">Anmelden</a>
+      </div>
+    {% endif %}
+  </div>
+</header>

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Ausleihe #{{ loan.id|default:"–" }} – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+  <a href="/ausleihen/" class="btn btn-ghost btn-sm" style="margin-top:1rem">← Zurück zur Liste</a>
+{% elif loan %}
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/ausleihen/" class="breadcrumb-link">Ausleihen</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Ausleihe #{{ loan.id }}</span>
+    </div>
+    <div class="page-hero-row">
+      <div>
+        <h1 class="page-hero-title">
+          {% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}
+        </h1>
+        <p class="page-hero-sub">Ausleihe #{{ loan.id }}</p>
+      </div>
+      {{ loan.status|ausleihe_status_badge }}
+    </div>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Ausleihdetails</h2>
+      </div>
+      <div class="card-body">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>Gerät</dt>
+            <dd>
+              {% if loan.geraet %}
+                <a href="/geraete/{{ loan.geraet_id }}/" class="link">{{ loan.geraet.name }}</a>
+              {% else %}
+                Gerät #{{ loan.geraet_id }}
+              {% endif %}
+            </dd>
+          </div>
+          <div class="detail-row">
+            <dt>Status</dt>
+            <dd>{{ loan.status|ausleihe_status_badge }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>Startdatum</dt>
+            <dd>{{ loan.startdatum|format_date }}</dd>
+          </div>
+          {% if loan.geplantes_rueckgabedatum %}
+          <div class="detail-row">
+            <dt>Geplante Rückgabe</dt>
+            <dd>{{ loan.geplantes_rueckgabedatum|format_date }}</dd>
+          </div>
+          {% endif %}
+          {% if loan.tatsaechliches_rueckgabedatum %}
+          <div class="detail-row">
+            <dt>Tatsächliche Rückgabe</dt>
+            <dd>{{ loan.tatsaechliches_rueckgabedatum|format_date }}</dd>
+          </div>
+          {% endif %}
+          <div class="detail-row">
+            <dt>Verlängerungen</dt>
+            <dd>{{ loan.verlaengerungen_anzahl }} von 2 genutzt</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Aktionen</h2>
+      </div>
+      <div class="card-body action-stack">
+        {% if loan.status == 'aktiv' or loan.status == 'überfällig' %}
+          {% if loan|can_extend %}
+            <a href="/ausleihen/{{ loan.id }}/verlaengern/" class="btn btn-primary btn-full">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Verlängern (+14 Tage)
+            </a>
+          {% else %}
+            <div class="status-note status-note--neutral">
+              Maximale Verlängerungen (2) bereits erreicht.
+            </div>
+          {% endif %}
+          <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-full"
+              onclick="return confirm('Gerät jetzt zurückgeben? Diese Aktion kann nicht rückgängig gemacht werden.')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              Gerät zurückgeben
+            </button>
+          </form>
+        {% else %}
+          <div class="status-note status-note--neutral">
+            Diese Ausleihe ist abgeschlossen.
+          </div>
+          {% if loan.geraet_id %}
+            <a href="/geraete/{{ loan.geraet_id }}/" class="btn btn-ghost btn-full">Gerät anzeigen</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

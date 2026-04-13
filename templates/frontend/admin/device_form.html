@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}{% if form_mode == 'edit' %}Gerät bearbeiten{% else %}Neues Gerät{% endif %} – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/admin/geraete/" class="breadcrumb-link">Geräteverwaltung</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>{% if form_mode == 'edit' %}Bearbeiten{% else %}Neues Gerät{% endif %}</span>
+    </div>
+    <h1 class="page-hero-title">
+      {% if form_mode == 'edit' %}Gerät bearbeiten{% else %}Neues Gerät anlegen{% endif %}
+    </h1>
+    <p class="page-hero-sub">Administration · Geräteverwaltung</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+<div class="form-layout">
+  <div class="form-main">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Gerätedaten</h2>
+        {% if form_mode == 'edit' %}
+          <span class="badge badge-neutral">Bearbeiten</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <form method="post"
+          action="{% if form_mode == 'edit' %}/admin/geraete/{{ device.id }}/bearbeiten/{% else %}/admin/geraete/neu/{% endif %}"
+          novalidate>
+          {% csrf_token %}
+
+          {% if form_mode == 'create' %}
+          {# These fields are only settable on creation; PATCH only supports name/standort/status/bemerkungen #}
+          <div class="form-group">
+            <label for="inventar_nummer" class="form-label">
+              Inventarnummer <span class="form-label-required">*</span>
+            </label>
+            <input
+              type="text"
+              id="inventar_nummer"
+              name="inventar_nummer"
+              class="form-control"
+              placeholder="z.B. INV-2024-001"
+              value="{{ form_data.inventar_nummer|default:'' }}"
+              required
+            >
+          </div>
+          {% else %}
+          <div class="form-group">
+            <label class="form-label">Inventarnummer</label>
+            <div class="form-control form-control--readonly">{{ device.inventar_nummer }}</div>
+            <p class="form-hint">Die Inventarnummer kann nach dem Anlegen nicht mehr geändert werden.</p>
+          </div>
+          {% endif %}
+
+          <div class="form-group">
+            <label for="name" class="form-label">
+              Name <span class="form-label-required">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              class="form-control"
+              placeholder="z.B. MacBook Pro 14"
+              value="{{ form_data.name|default:device.name|default:'' }}"
+              required
+            >
+          </div>
+
+          {% if form_mode == 'create' %}
+          <div class="form-row">
+            <div class="form-group">
+              <label for="kategorie" class="form-label">Kategorie</label>
+              <input
+                type="text"
+                id="kategorie"
+                name="kategorie"
+                class="form-control"
+                placeholder="z.B. Laptop, Kamera, …"
+                value="{{ form_data.kategorie|default:'' }}"
+              >
+            </div>
+            <div class="form-group">
+              <label for="hersteller" class="form-label">Hersteller</label>
+              <input
+                type="text"
+                id="hersteller"
+                name="hersteller"
+                class="form-control"
+                placeholder="z.B. Apple, Lenovo, …"
+                value="{{ form_data.hersteller|default:'' }}"
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modell" class="form-label">Modell</label>
+              <input
+                type="text"
+                id="modell"
+                name="modell"
+                class="form-control"
+                placeholder="z.B. MBP 14 M3 Pro"
+                value="{{ form_data.modell|default:'' }}"
+              >
+            </div>
+            <div class="form-group">
+              <label for="seriennummer" class="form-label">Seriennummer</label>
+              <input
+                type="text"
+                id="seriennummer"
+                name="seriennummer"
+                class="form-control"
+                placeholder="Seriennummer des Geräts"
+                value="{{ form_data.seriennummer|default:'' }}"
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="anschaffungsdatum" class="form-label">Anschaffungsdatum</label>
+            <input
+              type="date"
+              id="anschaffungsdatum"
+              name="anschaffungsdatum"
+              class="form-control"
+              value="{{ form_data.anschaffungsdatum|default:'' }}"
+            >
+          </div>
+          {% else %}
+          {# Edit mode: show read-only fields that can't be PATCHed #}
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Kategorie</label>
+              <div class="form-control form-control--readonly">{{ device.kategorie|default:"–" }}</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hersteller</label>
+              <div class="form-control form-control--readonly">{{ device.hersteller|default:"–" }}</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Modell</label>
+              <div class="form-control form-control--readonly">{{ device.modell|default:"–" }}</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Seriennummer</label>
+              <div class="form-control form-control--readonly">{{ device.seriennummer|default:"–" }}</div>
+            </div>
+          </div>
+          <p class="form-hint">
+            Kategorie, Hersteller, Modell und Seriennummer können nach dem Anlegen nicht mehr geändert werden
+            (API-Einschränkung: PATCH unterstützt nur name, standort, status, bemerkungen).
+          </p>
+          {% endif %}
+
+          <div class="form-group">
+            <label for="standort" class="form-label">Standort</label>
+            <input
+              type="text"
+              id="standort"
+              name="standort"
+              class="form-control"
+              placeholder="z.B. Raum A1.23"
+              value="{{ form_data.standort|default:device.standort|default:'' }}"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="status" class="form-label">
+              Status <span class="form-label-required">*</span>
+            </label>
+            <select id="status" name="status" class="form-control" required>
+              {% for val, label in statuses %}
+                <option value="{{ val }}"
+                  {% if form_data.status == val %}selected
+                  {% elif not form_data and device.status == val %}selected
+                  {% elif not form_data and not device and val == 'verfügbar' %}selected
+                  {% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="bemerkungen" class="form-label">Bemerkungen</label>
+            <textarea
+              id="bemerkungen"
+              name="bemerkungen"
+              class="form-control form-control--textarea"
+              placeholder="Optionale Hinweise zum Gerät…"
+              rows="3"
+            >{{ form_data.bemerkungen|default:device.bemerkungen|default:'' }}</textarea>
+          </div>
+
+          <div class="form-actions">
+            <a href="/admin/geraete/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">
+              {% if form_mode == 'edit' %}Änderungen speichern{% else %}Gerät anlegen{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sidebar">
+    {% if form_mode == 'edit' and device %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Aktionen</h2>
+      </div>
+      <div class="card-body action-stack">
+        <a href="/geraete/{{ device.id }}/" class="btn btn-ghost btn-full">Gerät ansehen</a>
+        <a href="/admin/audit-logs/geraet/{{ device.id }}/" class="btn btn-ghost btn-full">Audit-Log</a>
+        <hr class="divider">
+        <form method="post" action="/admin/geraete/{{ device.id }}/loeschen/">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-full"
+            onclick="return confirm('Gerät \"{{ device.name }}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')">
+            Gerät löschen
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Hinweis</h3>
+        {% if form_mode == 'edit' %}
+        <p class="text-muted" style="font-size:0.875rem">
+          Über die API können nach dem Anlegen nur <strong>Name, Standort, Status</strong> und
+          <strong>Bemerkungen</strong> geändert werden (PATCH /api/v1/geraete/{id}).
+        </p>
+        {% else %}
+        <ul class="info-list">
+          <li>Die Inventarnummer muss eindeutig sein.</li>
+          <li>Pflichtfelder sind mit * markiert.</li>
+          <li>Der Status kann später jederzeit geändert werden.</li>
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
