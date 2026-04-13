@@ -21,8 +21,11 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Zur Sicherheit: Leerzeichen bei den CSRF-Origins entfernen, falls versehentlich welche bei Portainer mitgetippt wurden:
 csrf_trusted_env = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8050')
-CSRF_TRUSTED_ORIGINS = csrf_trusted_env.split(',')
+CSRF_TRUSTED_ORIGINS = [url.strip() for url in csrf_trusted_env.split(',')]
 
 # API Backend URL
 API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
