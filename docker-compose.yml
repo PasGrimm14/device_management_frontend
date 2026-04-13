@@ -11,3 +11,12 @@ services:
       - DEBUG=${DEBUG}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
     restart: unless-stopped
+    networks:
+      - default
+      - proxy-network
+
+# Das hier steht ganz am Ende der Datei:
+networks:
+  proxy-network:
+    name: proxy-network  # WICHTIG: Hier muss der exakte Name des Nginx-Netzwerks stehen (z.B. npm_default)
+    external: true
