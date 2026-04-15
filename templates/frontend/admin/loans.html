@@ -44,7 +44,7 @@
       <span class="badge badge-danger">{{ overdue_loans|length }}</span>
     </div>
     <div class="card-body">
-      <table class="table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>Gerät</th>
@@ -57,7 +57,7 @@
           {% for loan in overdue_loans %}
           <tr>
             <td>{% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}</td>
-            <td>{{ loan.benutzer_id }}</td>
+            <td>{{ loan.nutzer_id }}</td>
             <td>{{ loan.geplantes_rueckgabedatum|format_date }}</td>
             <td><span class="badge badge-danger">{{ loan.ueberfaellig_seit_tagen|default:"–" }}</span></td>
           </tr>
@@ -71,7 +71,7 @@
 {% if loans %}
   <div class="card">
     <div class="card-body" style="padding:0">
-      <table class="table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -86,7 +86,7 @@
         </thead>
         <tbody>
           {% for loan in loans %}
-          <tr {% if loan.status == 'überfällig' %}class="row--danger"{% endif %}>
+          <tr {% if loan.status == 'überfällig' %}class="table-row--highlight"{% endif %}>
             <td>{{ loan.id }}</td>
             <td>
               {% if loan.geraet %}
@@ -95,7 +95,7 @@
                 Gerät #{{ loan.geraet_id }}
               {% endif %}
             </td>
-            <td>{{ loan.benutzer_id }}</td>
+            <td>{{ loan.nutzer_id }}</td>
             <td>{{ loan.startdatum|format_date }}</td>
             <td>{{ loan.geplantes_rueckgabedatum|format_date }}</td>
             <td>{{ loan.verlaengerungen_anzahl }}/2</td>

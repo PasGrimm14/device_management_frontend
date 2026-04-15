@@ -77,6 +77,7 @@ def device_detail_view(request, device_id: int):
         'current_user': request.current_user,
         'device': None,
         'active_loan': None,
+        'geraet_ausleihe': None,
         'active_reservation': None,
         'error': None,
     }
@@ -98,14 +99,23 @@ def device_detail_view(request, device_id: int):
         except APIError:
             context['box'] = {}
 
-    # Check if user has active loan for this device
+    # Load active loans for this device.
+    # geraet_ausleihe: first active loan found (for return-date display, visible to all).
+    # active_loan: own active loan only (for Verlängern/Zurückgeben action buttons).
+    cu = request.current_user
+    current_user_id = cu.get('id') if isinstance(cu, dict) else getattr(cu, 'id', None)
+
     try:
         loans = client.get_loans(limit=100)
         for loan in loans:
             if (loan.get('geraet_id') == device_id
                     and loan.get('status') in ('aktiv', 'überfällig')):
-                context['active_loan'] = loan
-                break
+                if context['geraet_ausleihe'] is None:
+                    context['geraet_ausleihe'] = loan
+                if (context['active_loan'] is None
+                        and current_user_id
+                        and loan.get('nutzer_id') == current_user_id):
+                    context['active_loan'] = loan
     except APIError:
         pass
 

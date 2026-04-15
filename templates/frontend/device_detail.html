@@ -116,6 +116,26 @@
     </div>
 
     {# Active loan info #}
+    {# Rückgabedatum für Nutzer, die das Gerät nicht selbst ausgeliehen haben #}
+    {% if geraet_ausleihe and not active_loan %}
+    <div class="card card--warn">
+      <div class="card-header">
+        <h2 class="card-title">Aktive Ausleihe</h2>
+        {{ geraet_ausleihe.status|ausleihe_status_badge }}
+      </div>
+      <div class="card-body">
+        <dl class="detail-list">
+          {% if geraet_ausleihe.geplantes_rueckgabedatum %}
+          <div class="detail-row">
+            <dt>Geplantes Rückgabedatum</dt>
+            <dd>{{ geraet_ausleihe.geplantes_rueckgabedatum|format_date }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+    {% endif %}
+
     {% if active_loan %}
     <div class="card card--warn">
       <div class="card-header">
