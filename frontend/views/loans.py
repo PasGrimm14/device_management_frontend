@@ -30,6 +30,7 @@ def loan_list_view(request):
 
     try:
         loans = client.get_loans(limit=200)
+        loans.sort(key=lambda l: l.get('geplantes_rueckgabedatum') or '')
         if status_filter:
             loans = [l for l in loans if l.get('status') == status_filter]
         context['loans'] = loans
@@ -168,8 +169,9 @@ def loan_return_view(request, loan_id: int):
     """
     client = get_client(request)
 
+    zustand = request.POST.get('zustand', '').strip() or None
     try:
-        client.return_loan(loan_id)
+        client.return_loan_with_condition(loan_id, zustand=zustand)
         messages.success(request, 'Gerät erfolgreich zurückgegeben.')
     except APIError as e:
         if e.status_code == 400:

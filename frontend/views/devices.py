@@ -49,19 +49,9 @@ def device_list_view(request):
         devices = client.get_devices(
             status=status_filter or None,
             kategorie=kategorie_filter or None,
+            q=search_query or None,
             limit=200,
         )
-
-        # Client-side search filter (API may not support text search)
-        if search_query:
-            q = search_query.lower()
-            devices = [
-                d for d in devices
-                if q in (d.get('name') or '').lower()
-                or q in (d.get('hersteller') or '').lower()
-                or q in (d.get('modell') or '').lower()
-                or q in (d.get('inventar_nummer') or '').lower()
-            ]
 
         # Extract unique categories for filter dropdown
         kategorien = sorted(set(
@@ -100,6 +90,13 @@ def device_detail_view(request, device_id: int):
         else:
             context['error'] = f'Gerät konnte nicht geladen werden: {e.detail}'
         return render(request, 'frontend/device_detail.html', context)
+
+    # Box-Informationen laden (non-fatal)
+    if device.get('box_id'):
+        try:
+            context['box'] = client.get_box(device['box_id'])
+        except APIError:
+            context['box'] = {}
 
     # Check if user has active loan for this device
     try:

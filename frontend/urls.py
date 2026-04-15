@@ -1,7 +1,7 @@
 """URL configuration for the frontend app."""
 
 from django.urls import path
-from frontend.views import auth, dashboard, devices, loans, reservations, profile, admin_views
+from frontend.views import auth, dashboard, devices, loans, reservations, profile, admin_views, standort_views
 
 urlpatterns = [
     # Auth
@@ -45,4 +45,19 @@ urlpatterns = [
     path('admin/benutzer/<int:user_id>/loeschen/', admin_views.admin_user_delete_view, name='admin_user_delete'),
     path('admin/audit-logs/', admin_views.admin_audit_logs_view, name='admin_audit_logs'),
     path('admin/audit-logs/geraet/<int:device_id>/', admin_views.admin_device_audit_logs_view, name='admin_device_audit_logs'),
+
+    # Admin - Standortverwaltung
+    path('admin/standorte/', standort_views.admin_standort_list_view, name='admin_standort_list'),
+    path('admin/standorte/einrichtung/neu/', standort_views.admin_bildungseinrichtung_create_view, name='admin_bildungseinrichtung_create'),
+    path('admin/standorte/standort/neu/', standort_views.admin_standort_create_view, name='admin_standort_create'),
+    path('admin/standorte/box/neu/', standort_views.admin_box_create_view, name='admin_box_create'),
+
+    # Admin - Ausleihen-Verwaltung
+    path('admin/ausleihen/', admin_views.admin_loan_list_view, name='admin_loan_list'),
+
+    # Admin - Export
+    path('admin/export/', admin_views.admin_export_view, name='admin_export'),
+
+    # Admin - Statistik
+    path('admin/statistik/', admin_views.admin_statistik_view, name='admin_statistik'),
 ]

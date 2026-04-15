@@ -54,6 +54,8 @@
             {% endif %}
             <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/" style="display:inline">
               {% csrf_token %}
+              <input type="text" name="zustand" class="form-control form-control--sm"
+                placeholder="Schäden oder Auffälligkeiten…" style="display:inline-block;width:auto;margin-right:.5rem">
               <button type="submit" class="btn btn-danger btn-sm"
                 onclick="return confirm('Gerät jetzt zurückgeben?')">
                 Zurückgeben

@@ -35,11 +35,12 @@
       <div class="card-body">
         <form method="post"
           action="{% if form_mode == 'edit' %}/admin/geraete/{{ device.id }}/bearbeiten/{% else %}/admin/geraete/neu/{% endif %}"
+          enctype="multipart/form-data"
           novalidate>
           {% csrf_token %}
 
           {% if form_mode == 'create' %}
-          {# These fields are only settable on creation; PATCH only supports name/standort/status/bemerkungen #}
+          {# These fields are only settable on creation; PATCH only supports name/box_id/status/bemerkungen #}
           <div class="form-group">
             <label for="inventar_nummer" class="form-label">
               Inventarnummer <span class="form-label-required">*</span>
@@ -167,15 +168,18 @@
           {% endif %}
 
           <div class="form-group">
-            <label for="standort" class="form-label">Standort</label>
-            <input
-              type="text"
-              id="standort"
-              name="standort"
-              class="form-control"
-              placeholder="z.B. Raum A1.23"
-              value="{% if form_data %}{{ form_data.standort }}{% elif device %}{{ device.standort }}{% endif %}"
-            >
+            <label for="box_id" class="form-label">Box / Standort</label>
+            <select id="box_id" name="box_id" class="form-control">
+              <option value="">– Kein Standort –</option>
+              {% for box in boxes %}
+                <option value="{{ box.id }}"
+                  {% if form_data.box_id == box.id|stringformat:"s" %}selected
+                  {% elif not form_data and device.box_id == box.id %}selected
+                  {% endif %}>
+                  {% if box.standort.bildungseinrichtung.name %}{{ box.standort.bildungseinrichtung.name }} – {% endif %}{% if box.standort.gebaeude %}{{ box.standort.gebaeude }}{% endif %}{% if box.standort.raum %}/{{ box.standort.raum }}{% endif %} (Box {{ box.box_nummer }})
+                </option>
+              {% endfor %}
+            </select>
           </div>
 
           <div class="form-group">
@@ -202,6 +206,34 @@
               placeholder="Optionale Hinweise zum Gerät…"
               rows="3"
             >{% if form_data %}{{ form_data.bemerkungen }}{% elif device %}{{ device.bemerkungen }}{% endif %}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Gerätebild</label>
+            <div class="image-upload-zone" id="imageUploadZone">
+              <input
+                type="file"
+                id="bildInput"
+                name="bild"
+                class="image-upload-input"
+                accept="image/jpeg,image/png,image/webp"
+              >
+              <div class="image-upload-placeholder" id="uploadPlaceholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p>Bild hier ablegen oder klicken</p>
+                <span>JPEG, PNG, WebP</span>
+              </div>
+              <div class="image-preview-wrap" id="previewWrap">
+                <img src="" alt="Vorschau" class="image-preview" id="imagePreview">
+                <button type="button" class="image-preview-remove" id="removeImage">×</button>
+              </div>
+            </div>
+            {% if form_mode == 'edit' and device.bild_id %}
+              <p class="form-hint">Ein Bild ist bereits hinterlegt. Ein neuer Upload ersetzt es.</p>
+            {% endif %}
           </div>
 
           <div class="form-actions">
@@ -241,7 +273,7 @@
         <h3 class="info-title">Hinweis</h3>
         {% if form_mode == 'edit' %}
         <p class="text-muted" style="font-size:0.875rem">
-          Über die API können nach dem Anlegen nur <strong>Name, Standort, Status</strong> und
+          Über die API können nach dem Anlegen nur <strong>Name, Box/Standort, Status</strong> und
           <strong>Bemerkungen</strong> geändert werden (PATCH /api/v1/geraete/{id}).
         </p>
         {% else %}
@@ -255,5 +287,62 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var zone = document.getElementById('imageUploadZone');
+  var input = document.getElementById('bildInput');
+  var placeholder = document.getElementById('uploadPlaceholder');
+  var previewWrap = document.getElementById('previewWrap');
+  var preview = document.getElementById('imagePreview');
+  var removeBtn = document.getElementById('removeImage');
+
+  if (!zone) return;
+
+  zone.addEventListener('click', function (e) {
+    if (e.target !== removeBtn) input.click();
+  });
+
+  zone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave', function () {
+    zone.classList.remove('drag-over');
+  });
+  zone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      showPreview(e.dataTransfer.files[0]);
+    }
+  });
+
+  input.addEventListener('change', function () {
+    if (input.files.length) showPreview(input.files[0]);
+  });
+
+  removeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    input.value = '';
+    preview.src = '';
+    previewWrap.classList.remove('visible');
+    placeholder.style.display = '';
+  });
+
+  function showPreview(file) {
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      preview.src = ev.target.result;
+      placeholder.style.display = 'none';
+      previewWrap.classList.add('visible');
+    };
+    reader.readAsDataURL(file);
+  }
+})();
+</script>
 {% endblock %}
 

@@ -88,6 +88,32 @@
         </svg>
         Audit-Logs
       </a>
+      <a href="/admin/ausleihen/" class="sidebar-link {% if '/admin/ausleihen/' in request.path %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        </svg>
+        Ausleihen
+      </a>
+      <a href="/admin/standorte/" class="sidebar-link {% if '/admin/standorte/' in request.path %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        Standorte
+      </a>
+      <a href="/admin/statistik/" class="sidebar-link {% if '/admin/statistik/' in request.path %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+        </svg>
+        Statistik
+      </a>
+      <a href="/admin/export/" class="sidebar-link {% if '/admin/export/' in request.path %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </a>
     </div>
     {% endif %}
   </nav>

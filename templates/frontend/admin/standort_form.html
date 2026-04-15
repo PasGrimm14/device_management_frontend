@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}
+  {% if form_type == 'einrichtung' %}Bildungseinrichtung anlegen
+  {% elif form_type == 'standort' %}Standort anlegen
+  {% else %}Box anlegen
+  {% endif %} – DHBW Gerätemanagement
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <a href="/admin/standorte/" class="breadcrumb-link">Standorte</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>
+        {% if form_type == 'einrichtung' %}Bildungseinrichtung anlegen
+        {% elif form_type == 'standort' %}Standort anlegen
+        {% else %}Box anlegen
+        {% endif %}
+      </span>
+    </div>
+    <h1 class="page-hero-title">
+      {% if form_type == 'einrichtung' %}Neue Bildungseinrichtung
+      {% elif form_type == 'standort' %}Neuen Standort anlegen
+      {% else %}Neue Box anlegen
+      {% endif %}
+    </h1>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+<div class="form-layout">
+  <div class="form-main">
+    <div class="card">
+      <div class="card-body">
+
+        {# ---- Bildungseinrichtung ---- #}
+        {% if form_type == 'einrichtung' %}
+        <form method="post" action="/admin/standorte/einrichtung/neu/" novalidate>
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="name" class="form-label">Name <span class="form-label-required">*</span></label>
+            <input type="text" id="name" name="name" class="form-control"
+              placeholder="z.B. DHBW Heilbronn"
+              value="{{ form_data.name|default:'' }}" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="strasse" class="form-label">Straße</label>
+              <input type="text" id="strasse" name="strasse" class="form-control"
+                placeholder="Musterstraße"
+                value="{{ form_data.strasse|default:'' }}">
+            </div>
+            <div class="form-group" style="max-width:8rem">
+              <label for="hausnummer" class="form-label">Hausnr.</label>
+              <input type="text" id="hausnummer" name="hausnummer" class="form-control"
+                placeholder="1a"
+                value="{{ form_data.hausnummer|default:'' }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="max-width:8rem">
+              <label for="plz" class="form-label">PLZ</label>
+              <input type="text" id="plz" name="plz" class="form-control"
+                placeholder="74072"
+                value="{{ form_data.plz|default:'' }}">
+            </div>
+            <div class="form-group">
+              <label for="ort" class="form-label">Ort</label>
+              <input type="text" id="ort" name="ort" class="form-control"
+                placeholder="Heilbronn"
+                value="{{ form_data.ort|default:'' }}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="bundesland" class="form-label">Bundesland</label>
+            <input type="text" id="bundesland" name="bundesland" class="form-control"
+              placeholder="Baden-Württemberg"
+              value="{{ form_data.bundesland|default:'' }}">
+          </div>
+          <div class="form-actions">
+            <a href="/admin/standorte/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">Einrichtung anlegen</button>
+          </div>
+        </form>
+
+        {# ---- Standort ---- #}
+        {% elif form_type == 'standort' %}
+        <form method="post" action="/admin/standorte/standort/neu/" novalidate>
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="bildungseinrichtung_id" class="form-label">
+              Bildungseinrichtung <span class="form-label-required">*</span>
+            </label>
+            <select id="bildungseinrichtung_id" name="bildungseinrichtung_id" class="form-control" required>
+              <option value="">– bitte wählen –</option>
+              {% for e in einrichtungen %}
+                <option value="{{ e.id }}"
+                  {% if form_data.bildungseinrichtung_id == e.id|stringformat:"s" %}selected{% endif %}>
+                  {{ e.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="gebaeude" class="form-label">Gebäude</label>
+              <input type="text" id="gebaeude" name="gebaeude" class="form-control"
+                placeholder="z.B. Gebäude A"
+                value="{{ form_data.gebaeude|default:'' }}">
+            </div>
+            <div class="form-group">
+              <label for="raum" class="form-label">Raum</label>
+              <input type="text" id="raum" name="raum" class="form-control"
+                placeholder="z.B. A1.23"
+                value="{{ form_data.raum|default:'' }}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="beschreibung" class="form-label">Beschreibung</label>
+            <input type="text" id="beschreibung" name="beschreibung" class="form-control"
+              placeholder="Optionale Beschreibung…"
+              value="{{ form_data.beschreibung|default:'' }}">
+          </div>
+          <div class="form-actions">
+            <a href="/admin/standorte/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">Standort anlegen</button>
+          </div>
+        </form>
+
+        {# ---- Box ---- #}
+        {% else %}
+        <form method="post" action="/admin/standorte/box/neu/" novalidate>
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="standort_id" class="form-label">
+              Standort <span class="form-label-required">*</span>
+            </label>
+            <select id="standort_id" name="standort_id" class="form-control" required>
+              <option value="">– bitte wählen –</option>
+              {% for s in standorte %}
+                <option value="{{ s.id }}"
+                  {% if form_data.standort_id == s.id|stringformat:"s" %}selected{% endif %}>
+                  {% if s.bildungseinrichtung.name %}{{ s.bildungseinrichtung.name }} – {% endif %}
+                  {{ s.gebaeude|default:"" }}{% if s.raum %}/{{ s.raum }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="box_nummer" class="form-label">
+              Box-Nummer <span class="form-label-required">*</span>
+            </label>
+            <input type="text" id="box_nummer" name="box_nummer" class="form-control"
+              placeholder="z.B. B-01"
+              value="{{ form_data.box_nummer|default:'' }}" required>
+          </div>
+          <div class="form-group">
+            <label for="beschreibung" class="form-label">Beschreibung</label>
+            <input type="text" id="beschreibung" name="beschreibung" class="form-control"
+              placeholder="Optionale Beschreibung…"
+              value="{{ form_data.beschreibung|default:'' }}">
+          </div>
+          <div class="form-actions">
+            <a href="/admin/standorte/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">Box anlegen</button>
+          </div>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sidebar">
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Hierarchie</h3>
+        <ul class="info-list">
+          <li><strong>Bildungseinrichtung</strong> – z.B. DHBW Heilbronn</li>
+          <li><strong>Standort</strong> – Gebäude und Raum innerhalb einer Einrichtung</li>
+          <li><strong>Box</strong> – physische Aufbewahrungsbox an einem Standort</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

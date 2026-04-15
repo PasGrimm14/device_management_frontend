@@ -4,6 +4,7 @@ Device management, user management, and audit logs (Admin only).
 """
 
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 
@@ -50,17 +51,9 @@ def admin_device_list_view(request):
     try:
         devices = client.get_devices(
             status=status_filter or None,
+            q=search_query or None,
             limit=200,
         )
-        if search_query:
-            q = search_query.lower()
-            devices = [
-                d for d in devices
-                if q in (d.get('name') or '').lower()
-                or q in (d.get('inventar_nummer') or '').lower()
-                or q in (d.get('hersteller') or '').lower()
-                or q in (d.get('modell') or '').lower()
-            ]
         context['devices'] = devices
     except APIError as e:
         context['error'] = f'Geräteliste konnte nicht geladen werden: {e.detail}'
@@ -76,16 +69,35 @@ def admin_device_create_view(request):
     context = {
         'current_user': request.current_user,
         'statuses': DEVICE_STATUSES,
+        'boxes': [],
         'device': None,
         'form_mode': 'create',
         'error': None,
     }
+
+    try:
+        context['boxes'] = client.get_boxes(limit=500)
+    except APIError:
+        pass
 
     if request.method == 'POST':
         data = _extract_device_form_data(request.POST)
 
         try:
             device = client.create_device(data)
+            # Bild-Upload (non-fatal)
+            bild = request.FILES.get('bild')
+            if bild:
+                try:
+                    bild_data = client.upload_device_image(
+                        bild.read(), bild.name, bild.content_type
+                    )
+                    client.assign_device_image(device['id'], bild_data['id'])
+                except APIError as img_err:
+                    messages.warning(
+                        request,
+                        f'Gerät angelegt, aber Bild-Upload fehlgeschlagen: {img_err.detail}'
+                    )
             messages.success(request, f'Gerät "{device.get("name")}" erfolgreich angelegt.')
             return redirect('/admin/geraete/')
         except APIError as e:
@@ -108,6 +120,7 @@ def admin_device_edit_view(request, device_id: int):
     context = {
         'current_user': request.current_user,
         'statuses': DEVICE_STATUSES,
+        'boxes': [],
         'device': None,
         'form_mode': 'edit',
         'error': None,
@@ -120,19 +133,42 @@ def admin_device_edit_view(request, device_id: int):
         context['error'] = f'Gerät konnte nicht geladen werden: {e.detail}'
         return render(request, 'frontend/admin/device_form.html', context)
 
+    try:
+        context['boxes'] = client.get_boxes(limit=500)
+    except APIError:
+        pass
+
     if request.method == 'POST':
-        # Only PATCH-supported fields per API spec: name, standort, status, bemerkungen
+        # PATCH-unterstützte Felder: name, box_id, status, bemerkungen
         patch_data = {}
-        for field in ('name', 'standort', 'status', 'bemerkungen'):
+        for field in ('name', 'status', 'bemerkungen'):
             val = request.POST.get(field, '').strip()
             if val:
                 patch_data[field] = val
             elif field == 'bemerkungen':
-                # Allow clearing bemerkungen
                 patch_data[field] = request.POST.get(field, '')
+        box_id_val = request.POST.get('box_id', '').strip()
+        if box_id_val:
+            try:
+                patch_data['box_id'] = int(box_id_val)
+            except ValueError:
+                pass
 
         try:
             updated = client.update_device(device_id, patch_data)
+            # Bild-Upload (non-fatal)
+            bild = request.FILES.get('bild')
+            if bild:
+                try:
+                    bild_data = client.upload_device_image(
+                        bild.read(), bild.name, bild.content_type
+                    )
+                    client.assign_device_image(device_id, bild_data['id'])
+                except APIError as img_err:
+                    messages.warning(
+                        request,
+                        f'Gerät aktualisiert, aber Bild-Upload fehlgeschlagen: {img_err.detail}'
+                    )
             messages.success(request, f'Gerät "{updated.get("name")}" erfolgreich aktualisiert.')
             return redirect('/admin/geraete/')
         except APIError as e:
@@ -170,13 +206,19 @@ def _extract_device_form_data(post_data) -> dict:
     data = {}
     fields = [
         'inventar_nummer', 'name', 'kategorie', 'hersteller',
-        'modell', 'seriennummer', 'standort', 'status',
+        'modell', 'seriennummer', 'status',
         'anschaffungsdatum', 'bemerkungen',
     ]
     for field in fields:
         val = post_data.get(field, '').strip()
         if val:
             data[field] = val
+    box_id_val = post_data.get('box_id', '').strip()
+    if box_id_val:
+        try:
+            data['box_id'] = int(box_id_val)
+        except ValueError:
+            pass
     return data
 
 
@@ -326,3 +368,102 @@ def admin_device_audit_logs_view(request, device_id: int):
         context['error'] = f'Audit-Logs konnten nicht geladen werden: {e.detail}'
 
     return render(request, 'frontend/admin/audit_logs.html', context)
+
+
+# ---------------------------------------------------------------------------
+# Admin - Ausleihen-Verwaltung
+# ---------------------------------------------------------------------------
+
+@admin_required
+def admin_loan_list_view(request):
+    """Admin-Übersicht aller Ausleihen mit Rückgabe-Funktion."""
+    client = get_client(request)
+    status_filter = request.GET.get('status', '')
+    show_overdue = request.GET.get('ueberfaellig') == '1'
+
+    context = {
+        'current_user': request.current_user,
+        'loans': [],
+        'overdue_loans': [],
+        'status_filter': status_filter,
+        'show_overdue': show_overdue,
+        'error': None,
+    }
+
+    try:
+        loans = client.get_loans(limit=200)
+        loans.sort(key=lambda l: l.get('geplantes_rueckgabedatum') or '')
+        if status_filter:
+            loans = [l for l in loans if l.get('status') == status_filter]
+        context['loans'] = loans
+    except APIError as e:
+        context['error'] = f'Ausleihliste konnte nicht geladen werden: {e.detail}'
+
+    if show_overdue:
+        try:
+            context['overdue_loans'] = client.get_overdue_loans()
+        except APIError:
+            pass
+
+    if request.method == 'POST':
+        loan_id = request.POST.get('loan_id')
+        zustand = request.POST.get('zustand', '').strip() or None
+        if loan_id:
+            try:
+                client.return_loan_with_condition(int(loan_id), zustand=zustand)
+                messages.success(request, 'Ausleihe erfolgreich zurückgegeben.')
+            except APIError as e:
+                messages.error(request, f'Rückgabe fehlgeschlagen: {e.detail}')
+        return redirect('/admin/ausleihen/')
+
+    return render(request, 'frontend/admin/loans.html', context)
+
+
+# ---------------------------------------------------------------------------
+# Admin - Export
+# ---------------------------------------------------------------------------
+
+@admin_required
+@require_http_methods(['GET', 'POST'])
+def admin_export_view(request):
+    """CSV-Export für Ausleihen."""
+    client = get_client(request)
+
+    if request.method == 'POST':
+        status = request.POST.get('status', '').strip() or None
+        von = request.POST.get('von', '').strip() or None
+        bis = request.POST.get('bis', '').strip() or None
+
+        resp = client.export_loans_csv(status=status, von=von, bis=bis)
+        if resp.status_code == 200:
+            response = HttpResponse(resp.content, content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename=ausleihen.csv'
+            return response
+        else:
+            messages.error(request, 'Export fehlgeschlagen.')
+
+    return render(request, 'frontend/admin/export.html', {
+        'current_user': request.current_user,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Admin - Statistik
+# ---------------------------------------------------------------------------
+
+@admin_required
+def admin_statistik_view(request):
+    """Statistik-Dashboard für Admins."""
+    client = get_client(request)
+    context = {
+        'current_user': request.current_user,
+        'statistik': {},
+        'error': None,
+    }
+
+    try:
+        context['statistik'] = client.get_statistik()
+    except APIError as e:
+        context['error'] = f'Statistik konnte nicht geladen werden: {e.detail}'
+
+    return render(request, 'frontend/admin/statistik.html', context)

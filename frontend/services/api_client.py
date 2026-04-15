@@ -72,6 +72,7 @@ class APIClient:
         self,
         status: str | None = None,
         kategorie: str | None = None,
+        q: str | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list:
@@ -84,6 +85,8 @@ class APIClient:
             params['status'] = status
         if kategorie:
             params['kategorie'] = kategorie
+        if q:
+            params['q'] = q
         response = self.session.get(self._url('/api/v1/geraete/'), params=params)
         return self._handle_response(response)
 
@@ -116,6 +119,26 @@ class APIClient:
         Returns the raw requests.Response (binary image) for proxy use.
         """
         return self.session.get(self._url(f'/api/v1/geraete/{device_id}/qr-code'))
+
+    def upload_device_image(self, file_content: bytes, filename: str, mime_type: str) -> dict:
+        """POST /api/v1/admin/bilder (multipart/form-data, Feld "datei")"""
+        response = self.session.post(
+            self._url('/api/v1/admin/bilder'),
+            files={'datei': (filename, file_content, mime_type)},
+        )
+        return self._handle_response(response)
+
+    def assign_device_image(self, device_id: int, bild_id: int) -> dict:
+        """PUT /api/v1/admin/geraete/{id}/bild"""
+        response = self.session.put(
+            self._url(f'/api/v1/admin/geraete/{device_id}/bild'),
+            json={'bild_id': bild_id},
+        )
+        return self._handle_response(response)
+
+    def get_device_image_url(self, device_id: int) -> requests.Response:
+        """GET /api/v1/geraete/{id}/bild – gibt raw Response zurück (Presigned-URL oder Bild)."""
+        return self.session.get(self._url(f'/api/v1/geraete/{device_id}/bild'))
 
     # -------------------------------------------------------------------------
     # Ausleihen (Loans)
@@ -164,6 +187,22 @@ class APIClient:
         Returns updated AusleiheResponse.
         """
         response = self.session.post(self._url(f'/api/v1/ausleihen/{loan_id}/rueckgabe'))
+        return self._handle_response(response)
+
+    def return_loan_with_condition(self, loan_id: int, zustand: str | None = None) -> dict:
+        """POST /api/v1/ausleihen/{id}/rueckgabe mit optionalem Zustand."""
+        body = {}
+        if zustand:
+            body['zustand_bei_rueckgabe'] = zustand
+        response = self.session.post(
+            self._url(f'/api/v1/ausleihen/{loan_id}/rueckgabe'),
+            json=body if body else None,
+        )
+        return self._handle_response(response)
+
+    def get_overdue_loans(self) -> list:
+        """GET /api/v1/ausleihen/ueberfaellig – nur Admin."""
+        response = self.session.get(self._url('/api/v1/ausleihen/ueberfaellig'))
         return self._handle_response(response)
 
     # -------------------------------------------------------------------------
@@ -229,6 +268,81 @@ class APIClient:
             self._url(f'/api/v1/benutzer/{user_id}/rolle'),
             json={'rolle': rolle},
         )
+        return self._handle_response(response)
+
+    # -------------------------------------------------------------------------
+    # Audit Logs
+    # -------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------
+    # Standort-Struktur: Box / Standort / Bildungseinrichtung
+    # -------------------------------------------------------------------------
+
+    def get_boxes(self, skip: int = 0, limit: int = 100) -> list:
+        """GET /api/v1/boxen/"""
+        params = {'skip': skip, 'limit': limit}
+        response = self.session.get(self._url('/api/v1/boxen/'), params=params)
+        return self._handle_response(response)
+
+    def get_box(self, box_id: int) -> dict:
+        """GET /api/v1/boxen/{id}"""
+        response = self.session.get(self._url(f'/api/v1/boxen/{box_id}'))
+        return self._handle_response(response)
+
+    def get_standorte(self, skip: int = 0, limit: int = 100) -> list:
+        """GET /api/v1/standorte/"""
+        params = {'skip': skip, 'limit': limit}
+        response = self.session.get(self._url('/api/v1/standorte/'), params=params)
+        return self._handle_response(response)
+
+    def get_bildungseinrichtungen(self, skip: int = 0, limit: int = 100) -> list:
+        """GET /api/v1/bildungseinrichtungen/"""
+        params = {'skip': skip, 'limit': limit}
+        response = self.session.get(self._url('/api/v1/bildungseinrichtungen/'), params=params)
+        return self._handle_response(response)
+
+    def create_box(self, data: dict) -> dict:
+        """POST /api/v1/boxen/ (Admin)"""
+        response = self.session.post(self._url('/api/v1/boxen/'), json=data)
+        return self._handle_response(response)
+
+    def create_standort(self, data: dict) -> dict:
+        """POST /api/v1/standorte/ (Admin)"""
+        response = self.session.post(self._url('/api/v1/standorte/'), json=data)
+        return self._handle_response(response)
+
+    def create_bildungseinrichtung(self, data: dict) -> dict:
+        """POST /api/v1/bildungseinrichtungen/ (Admin)"""
+        response = self.session.post(self._url('/api/v1/bildungseinrichtungen/'), json=data)
+        return self._handle_response(response)
+
+    # -------------------------------------------------------------------------
+    # Export
+    # -------------------------------------------------------------------------
+
+    def export_loans_csv(
+        self,
+        status: str | None = None,
+        von: str | None = None,
+        bis: str | None = None,
+    ) -> requests.Response:
+        """GET /api/v1/export/ausleihen – gibt raw Response zurück."""
+        params = {}
+        if status:
+            params['status'] = status
+        if von:
+            params['von'] = von
+        if bis:
+            params['bis'] = bis
+        return self.session.get(self._url('/api/v1/export/ausleihen'), params=params)
+
+    # -------------------------------------------------------------------------
+    # Statistik
+    # -------------------------------------------------------------------------
+
+    def get_statistik(self) -> dict:
+        """GET /api/v1/statistik/ (Admin)"""
+        response = self.session.get(self._url('/api/v1/statistik/'))
         return self._handle_response(response)
 
     # -------------------------------------------------------------------------

@@ -71,10 +71,17 @@
             <dd>{{ device.seriennummer }}</dd>
           </div>
           {% endif %}
-          {% if device.standort %}
+          {% if box %}
           <div class="detail-row">
             <dt>Standort</dt>
-            <dd>{{ device.standort }}</dd>
+            <dd>
+              {% if box.standort.bildungseinrichtung.name %}
+                {{ box.standort.bildungseinrichtung.name }} –
+              {% endif %}
+              {% if box.standort.gebaeude %}{{ box.standort.gebaeude }}{% endif %}
+              {% if box.standort.raum %}/{{ box.standort.raum }}{% endif %}
+              {% if box.box_nummer %} (Box {{ box.box_nummer }}){% endif %}
+            </dd>
           </div>
           {% endif %}
           <div class="detail-row">

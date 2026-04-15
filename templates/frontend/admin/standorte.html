@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Standortverwaltung – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <span>Administration</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>Standorte</span>
+    </div>
+    <div class="page-hero-row">
+      <div>
+        <h1 class="page-hero-title">Standortverwaltung</h1>
+        <p class="page-hero-sub">Bildungseinrichtungen, Standorte und Boxen verwalten</p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a href="/admin/standorte/einrichtung/neu/" class="btn btn-ghost btn-sm">+ Einrichtung</a>
+        <a href="/admin/standorte/standort/neu/" class="btn btn-ghost btn-sm">+ Standort</a>
+        <a href="/admin/standorte/box/neu/" class="btn btn-primary btn-sm">+ Box</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if einrichtungen %}
+  {% for einrichtung in einrichtungen %}
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-header">
+        <h2 class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-right:.4rem">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          {{ einrichtung.name }}
+        </h2>
+        {% if einrichtung.ort %}
+          <span class="badge badge-neutral">{{ einrichtung.plz|default:"" }} {{ einrichtung.ort }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% with einrichtung_standorte=standorte %}
+          {% for standort in einrichtung_standorte %}
+            {% if standort.bildungseinrichtung_id == einrichtung.id %}
+              <div style="margin-bottom:1rem;padding:.75rem;background:var(--surface-2);border-radius:6px">
+                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <strong>{{ standort.gebaeude|default:"–" }}</strong>
+                  {% if standort.raum %} / Raum {{ standort.raum }}{% endif %}
+                </div>
+                {% with standort_boxen=boxen %}
+                  {% for box in standort_boxen %}
+                    {% if box.standort_id == standort.id %}
+                      <div style="display:inline-flex;align-items:center;gap:.4rem;margin:.25rem;padding:.3rem .6rem;background:var(--surface);border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                        Box {{ box.box_nummer }}
+                        {% if box.beschreibung %}<span class="text-muted"> – {{ box.beschreibung }}</span>{% endif %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endwith %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endwith %}
+        {% comment %}Falls keine Standorte für diese Einrichtung vorhanden{% endcomment %}
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    </svg>
+    <p>Keine Bildungseinrichtungen vorhanden.</p>
+    <a href="/admin/standorte/einrichtung/neu/" class="btn btn-primary btn-sm">Einrichtung anlegen</a>
+  </div>
+{% endif %}
+{% endblock %}

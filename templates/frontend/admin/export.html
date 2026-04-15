@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Export – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <span>Administration</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>Export</span>
+    </div>
+    <h1 class="page-hero-title">Daten exportieren</h1>
+    <p class="page-hero-sub">Ausleihdaten als CSV herunterladen</p>
+  </div>
+</div>
+
+<div class="form-layout">
+  <div class="form-main">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Ausleihen-Export</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/admin/export/">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-control">
+              <option value="">Alle</option>
+              <option value="aktiv">Aktiv</option>
+              <option value="überfällig">Überfällig</option>
+              <option value="abgeschlossen">Abgeschlossen</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="von" class="form-label">Von</label>
+              <input type="date" id="von" name="von" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="bis" class="form-label">Bis</label>
+              <input type="date" id="bis" name="bis" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              CSV herunterladen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sidebar">
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Hinweis</h3>
+        <p class="text-muted" style="font-size:.875rem">
+          Die CSV-Datei enthält alle Ausleihdaten gefiltert nach den angegebenen Kriterien.
+          Ohne Filter werden alle Ausleihen exportiert.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

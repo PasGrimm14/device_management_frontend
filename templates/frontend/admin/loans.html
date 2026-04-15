@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Ausleihen-Verwaltung – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <span>Administration</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>Ausleihen</span>
+    </div>
+    <div class="page-hero-row">
+      <div>
+        <h1 class="page-hero-title">Ausleihen-Verwaltung</h1>
+        <p class="page-hero-sub">Alle Ausleihen im System verwalten</p>
+      </div>
+      <a href="?ueberfaellig={% if show_overdue %}0{% else %}1{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+         class="btn {% if show_overdue %}btn-danger{% else %}btn-ghost{% endif %} btn-sm">
+        {% if show_overdue %}Überfällige ausblenden{% else %}Überfällige anzeigen{% endif %}
+      </a>
+    </div>
+  </div>
+</div>
+
+{# Status Filter Tabs #}
+<div class="tab-bar">
+  <a href="/admin/ausleihen/" class="tab {% if not status_filter %}tab--active{% endif %}">Alle</a>
+  <a href="/admin/ausleihen/?status=aktiv" class="tab {% if status_filter == 'aktiv' %}tab--active{% endif %}">Aktiv</a>
+  <a href="/admin/ausleihen/?status=%C3%BCberf%C3%A4llig" class="tab tab--danger {% if status_filter == 'überfällig' %}tab--active{% endif %}">Überfällig</a>
+  <a href="/admin/ausleihen/?status=abgeschlossen" class="tab {% if status_filter == 'abgeschlossen' %}tab--active{% endif %}">Abgeschlossen</a>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if show_overdue and overdue_loans %}
+  <div class="card card--warn" style="margin-bottom:1.5rem">
+    <div class="card-header">
+      <h2 class="card-title">Überfällige Ausleihen</h2>
+      <span class="badge badge-danger">{{ overdue_loans|length }}</span>
+    </div>
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Gerät</th>
+            <th>Nutzer</th>
+            <th>Rückgabe geplant</th>
+            <th>Überfällig seit (Tage)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for loan in overdue_loans %}
+          <tr>
+            <td>{% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}</td>
+            <td>{{ loan.benutzer_id }}</td>
+            <td>{{ loan.geplantes_rueckgabedatum|format_date }}</td>
+            <td><span class="badge badge-danger">{{ loan.ueberfaellig_seit_tagen|default:"–" }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+{% if loans %}
+  <div class="card">
+    <div class="card-body" style="padding:0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Gerät</th>
+            <th>Nutzer</th>
+            <th>Start</th>
+            <th>Geplante Rückgabe</th>
+            <th>Verlängerungen</th>
+            <th>Status</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for loan in loans %}
+          <tr {% if loan.status == 'überfällig' %}class="row--danger"{% endif %}>
+            <td>{{ loan.id }}</td>
+            <td>
+              {% if loan.geraet %}
+                <a href="/geraete/{{ loan.geraet_id }}/" class="link">{{ loan.geraet.name }}</a>
+              {% else %}
+                Gerät #{{ loan.geraet_id }}
+              {% endif %}
+            </td>
+            <td>{{ loan.benutzer_id }}</td>
+            <td>{{ loan.startdatum|format_date }}</td>
+            <td>{{ loan.geplantes_rueckgabedatum|format_date }}</td>
+            <td>{{ loan.verlaengerungen_anzahl }}/2</td>
+            <td>{{ loan.status|ausleihe_status_badge }}</td>
+            <td>
+              <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
+              {% if loan.status == 'aktiv' or loan.status == 'überfällig' %}
+                <form method="post" action="/admin/ausleihen/" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                  <input type="text" name="zustand" class="form-control form-control--sm"
+                    placeholder="Zustand…" style="display:inline-block;width:auto;margin:0 .25rem">
+                  <button type="submit" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Ausleihe #{{ loan.id }} zurückgeben?')">
+                    Zurückgeben
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    </svg>
+    <p>Keine Ausleihen gefunden.</p>
+  </div>
+{% endif %}
+{% endblock %}

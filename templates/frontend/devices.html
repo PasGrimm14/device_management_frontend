@@ -81,14 +81,6 @@
             {% if device.modell %}{{ device.modell }}{% endif %}
             {% if not device.hersteller and not device.modell %}Keine weiteren Angaben{% endif %}
           </p>
-          {% if device.standort %}
-            <p class="device-card-location">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-              </svg>
-              {{ device.standort }}
-            </p>
-          {% endif %}
         </div>
         <div class="device-card-footer">
           <span class="device-card-inv">{{ device.inventar_nummer }}</span>

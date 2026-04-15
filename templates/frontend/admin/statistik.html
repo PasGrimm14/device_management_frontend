@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load static %}
+{% load frontend_tags %}
+
+{% block title %}Statistik – DHBW Gerätemanagement{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="breadcrumb">
+      <span>Administration</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>Statistik</span>
+    </div>
+    <h1 class="page-hero-title">Statistik</h1>
+    <p class="page-hero-sub">Systemübersicht und Kennzahlen</p>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert--error">{{ error }}</div>
+{% endif %}
+
+{% if statistik %}
+
+{# Stats Grid #}
+<section class="stats-grid">
+  <div class="stat-card stat-card--ok">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ statistik.geraete_gesamt|default:0 }}</span>
+      <span class="stat-label">Geräte gesamt</span>
+    </div>
+  </div>
+
+  <div class="stat-card stat-card--warn">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ statistik.ausleihen_aktiv|default:0 }}</span>
+      <span class="stat-label">Ausleihen aktiv</span>
+    </div>
+  </div>
+
+  <div class="stat-card {% if statistik.ausleihen_ueberfaellig > 0 %}stat-card--danger{% else %}stat-card--neutral{% endif %}">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">{{ statistik.ausleihen_ueberfaellig|default:0 }}</span>
+      <span class="stat-label">Überfällig</span>
+    </div>
+  </div>
+
+  <div class="stat-card stat-card--neutral">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/><polyline points="12 12 15 14"/>
+      </svg>
+    </div>
+    <div class="stat-body">
+      <span class="stat-value">
+        {% if statistik.durchschnittliche_ausleihdauer_tage %}
+          {{ statistik.durchschnittliche_ausleihdauer_tage|floatformat:1 }}
+        {% else %}–{% endif %}
+      </span>
+      <span class="stat-label">Ø Ausleihdauer (Tage)</span>
+    </div>
+  </div>
+</section>
+
+{# Geräte nach Status #}
+{% if statistik.geraete_nach_status %}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Geräte nach Status</h2>
+  </div>
+  <div class="card">
+    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center">
+      {% for status, anzahl in statistik.geraete_nach_status.items %}
+        <span class="badge {{ status|geraet_status_class }}" style="font-size:.9rem;padding:.4rem .8rem">
+          {{ status }}: {{ anzahl }}
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# Top-Geräte #}
+{% if statistik.top_geraete %}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Top 5 meistgeliehene Geräte</h2>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Gerät</th>
+            <th>Ausleihen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in statistik.top_geraete %}
+            {% if forloop.counter <= 5 %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                <a href="/geraete/{{ item.geraet_id }}/" class="link">{{ item.name }}</a>
+              </td>
+              <td>
+                <span class="badge badge-neutral">{{ item.anzahl_ausleihen }}</span>
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# Gesamtausleihen #}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Gesamtausleihen</h2>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <p class="text-muted">
+        Insgesamt wurden <strong>{{ statistik.ausleihen_gesamt|default:0 }}</strong> Ausleihen im System erfasst.
+      </p>
+    </div>
+  </div>
+</section>
+
+{% endif %}
+{% endblock %}

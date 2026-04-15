@@ -98,6 +98,10 @@
           {% endif %}
           <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/">
             {% csrf_token %}
+            <div class="form-group" style="margin-bottom:.75rem">
+              <input type="text" name="zustand" class="form-control"
+                placeholder="Schäden oder Auffälligkeiten…">
+            </div>
             <button type="submit" class="btn btn-danger btn-full"
               onclick="return confirm('Gerät jetzt zurückgeben? Diese Aktion kann nicht rückgängig gemacht werden.')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
