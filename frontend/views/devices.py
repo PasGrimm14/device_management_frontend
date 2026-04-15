@@ -126,9 +126,12 @@ def device_detail_view(request, device_id: int):
 @login_required
 def device_image_view(request, device_id: int):
     """
-    Proxy GET /api/v1/geraete/{id}/bild through Django so the
-    backend JWT token is never exposed to the browser.
+    Fetches the presigned URL from the backend, then proxies the image
+    content through Django so neither the JWT token nor the presigned URL
+    is ever exposed to the browser.
     """
+    import requests as req_lib
+
     client = get_client(request)
     resp = client.get_device_image_url(device_id)
 
@@ -137,8 +140,25 @@ def device_image_view(request, device_id: int):
     if resp.status_code != 200:
         return HttpResponse('Bild konnte nicht geladen werden.', status=502)
 
-    content_type = resp.headers.get('Content-Type', 'image/jpeg')
-    return HttpResponse(resp.content, content_type=content_type)
+    # The backend returns JSON: {"presigned_url": "https://..."}
+    try:
+        data = resp.json()
+        presigned_url = data.get('presigned_url')
+    except Exception:
+        return HttpResponse('Ungültige Antwort vom Bildserver.', status=502)
+
+    if not presigned_url:
+        return HttpResponse('Kein Bild für dieses Gerät verfügbar.', status=404)
+
+    # Proxy the image so the presigned URL is never exposed to the browser
+    try:
+        image_resp = req_lib.get(presigned_url, timeout=10)
+        if image_resp.status_code != 200:
+            return HttpResponse('Bild konnte nicht geladen werden.', status=502)
+        content_type = image_resp.headers.get('Content-Type', 'image/jpeg')
+        return HttpResponse(image_resp.content, content_type=content_type)
+    except Exception:
+        return HttpResponse('Bild konnte nicht geladen werden.', status=502)
 
 
 @login_required
