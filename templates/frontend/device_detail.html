@@ -33,6 +33,17 @@
 <div class="detail-layout">
   {# Main info #}
   <div class="detail-main">
+    {% if device.bild_id %}
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-body" style="padding:.75rem;text-align:center">
+        <img
+          src="/geraete/{{ device.id }}/bild/"
+          alt="Bild von {{ device.name }}"
+          style="max-width:100%;max-height:320px;object-fit:contain;border-radius:6px"
+        >
+      </div>
+    </div>
+    {% endif %}
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">Geräteinformationen</h2>

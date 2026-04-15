@@ -124,6 +124,24 @@ def device_detail_view(request, device_id: int):
 
 
 @login_required
+def device_image_view(request, device_id: int):
+    """
+    Proxy GET /api/v1/geraete/{id}/bild through Django so the
+    backend JWT token is never exposed to the browser.
+    """
+    client = get_client(request)
+    resp = client.get_device_image_url(device_id)
+
+    if resp.status_code == 404:
+        return HttpResponse('Kein Bild für dieses Gerät verfügbar.', status=404)
+    if resp.status_code != 200:
+        return HttpResponse('Bild konnte nicht geladen werden.', status=502)
+
+    content_type = resp.headers.get('Content-Type', 'image/jpeg')
+    return HttpResponse(resp.content, content_type=content_type)
+
+
+@login_required
 def device_qr_download_view(request, device_id: int):
     """
     Proxy GET /api/v1/geraete/{id}/qr-code through Django so the

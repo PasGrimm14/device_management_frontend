@@ -14,6 +14,7 @@ urlpatterns = [
     # Devices
     path('geraete/', devices.device_list_view, name='device_list'),
     path('geraete/<int:device_id>/', devices.device_detail_view, name='device_detail'),
+    path('geraete/<int:device_id>/bild/', devices.device_image_view, name='device_image'),
     path('geraete/<int:device_id>/qr-code/', devices.device_qr_download_view, name='device_qr_download'),
 
     # Loans
