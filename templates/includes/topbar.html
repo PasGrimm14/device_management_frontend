@@ -21,6 +21,36 @@
       </nav>
 
       <div class="topbar-user">
+
+        {# ── Role indicator + switch (only for real Admins) ── #}
+        {% if request.real_role == 'Administrator' %}
+          <div class="role-switcher">
+            <span class="role-badge {% if request.active_role == 'Administrator' %}role-badge--admin{% else %}role-badge--user{% endif %}">
+              {% if request.active_role == 'Administrator' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Admin
+              {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                User
+              {% endif %}
+            </span>
+            <a href="/rolle-wechseln/" class="role-switch-btn" title="{% if request.active_role == 'Administrator' %}Zu User-Ansicht wechseln{% else %}Zu Admin-Ansicht wechseln{% endif %}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M17 1l4 4-4 4"/>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <path d="M7 23l-4-4 4-4"/>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+              Wechseln
+            </a>
+          </div>
+        {% endif %}
+
         <a href="/profil/" class="topbar-user-link" title="Mein Profil">
           <div class="topbar-avatar">
             {{ request.current_user.name|first|upper }}

@@ -1,6 +1,9 @@
 """
 Decorators for DHBW Gerätemanagement Frontend.
 Provides login_required and admin_required decorators.
+
+Note: admin_required checks request.active_role (which respects the role-switch
+feature), so Admins browsing in "User mode" will be correctly denied admin pages.
 """
 
 from functools import wraps
@@ -24,8 +27,8 @@ def login_required(view_func):
 
 def admin_required(view_func):
     """
-    Decorator that requires the user to be an Administrator.
-    Redirects to dashboard with error message if not admin.
+    Decorator that requires the ACTIVE role to be Administrator.
+    Respects the role-switch: Admins browsing as User cannot access admin views.
     Also implies login_required.
     """
     @wraps(view_func)
@@ -34,8 +37,9 @@ def admin_required(view_func):
             messages.warning(request, 'Bitte melden Sie sich an, um fortzufahren.')
             return redirect('/login/')
 
-        user = request.current_user
-        if not user or user.get('rolle') != 'Administrator':
+        # Use active_role so the role-switch is respected
+        active_role = getattr(request, 'active_role', None)
+        if active_role != 'Administrator':
             messages.error(request, 'Zugriff verweigert. Administratorrechte erforderlich.')
             return redirect('/')
 
