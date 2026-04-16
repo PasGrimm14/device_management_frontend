@@ -59,12 +59,15 @@ def role_switch_view(request):
     Only available to users whose real role is Administrator.
     Stores the active role in the session under 'active_role'.
     """
-    user = request.current_user
-    if not user or user.get('rolle') != 'Administrator':
+    # Guard against real_role, NOT current_user.rolle – the middleware already
+    # overwrites current_user.rolle with the active (possibly switched) role,
+    # so checking it would lock out Admins who are currently in User mode.
+    real_role = getattr(request, 'real_role', None)
+    if real_role != 'Administrator':
         messages.error(request, 'Nur Administratoren können die Rolle wechseln.')
         return redirect('/')
 
-    current_active = request.session.get('active_role', user.get('rolle'))
+    current_active = request.session.get('active_role', 'Administrator')
     if current_active == 'Administrator':
         request.session['active_role'] = 'Studierende_Mitarbeitende'
         messages.success(request, 'Ansicht gewechselt: Sie sehen die App jetzt als Studierende/Mitarbeitende.')
