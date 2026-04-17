@@ -70,6 +70,26 @@
   </div>
 </section>
 
+{# Hinweis-Banner: Ausleihe via QR-Code #}
+{% if current_user.rolle != 'Administrator' %}
+<div class="card card--info" style="margin-bottom:1.75rem">
+  <div class="card-body" style="display:flex;align-items:center;gap:1rem">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" style="flex-shrink:0;color:var(--color-text-info)">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/>
+      <path d="M14 14h1v1h-1zM17 14h1v1h-1zM14 17h1M17 17h1v1h-1zM14 20h1v1h-1zM17 20h3"/>
+    </svg>
+    <div>
+      <strong>Geräte ausleihen</strong>: Reservieren Sie ein Gerät online, dann starten Sie die Ausleihe
+      durch Scannen des QR-Codes am Gerät.
+    </div>
+    <a href="/scanner/" class="btn btn-primary btn-sm" style="flex-shrink:0;margin-left:auto">
+      Scanner öffnen
+    </a>
+  </div>
+</div>
+{% endif %}
+
 {# Active Loans Section #}
 <section class="section">
   <div class="section-header">
@@ -105,7 +125,7 @@
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
       </svg>
       <p>Keine aktiven Ausleihen vorhanden.</p>
-      <a href="/geraete/" class="btn btn-primary btn-sm">Gerät ausleihen</a>
+      <a href="/geraete/" class="btn btn-ghost btn-sm">Gerät reservieren</a>
     </div>
   {% endif %}
 </section>
@@ -132,6 +152,9 @@
           </div>
           <div class="device-card-body">
             <h3 class="device-card-name">{{ device.name }}</h3>
+            {% if device.unique_name %}
+              <span style="font-size:.72rem;font-family:monospace;color:var(--muted)">{{ device.unique_name }}</span>
+            {% endif %}
             <p class="device-card-meta">
               {% if device.hersteller %}{{ device.hersteller }}{% endif %}
               {% if device.hersteller and device.modell %} · {% endif %}
@@ -140,6 +163,9 @@
           </div>
           <div class="device-card-footer">
             <span class="device-card-inv">{{ device.inventar_nummer }}</span>
+            {% if device.status == 'verfügbar' %}
+              <span class="device-card-action">Reservieren →</span>
+            {% endif %}
           </div>
         </a>
       {% endfor %}

@@ -40,7 +40,7 @@
         <tr>
           <th>Zeitstempel</th>
           <th>Aktion</th>
-          <th>Benutzer-ID</th>
+          <th>Benutzer</th>
           {% if not device %}<th>Geräte-ID</th>{% endif %}
           <th>Details</th>
         </tr>
@@ -60,7 +60,15 @@
               {% else %}badge-neutral{% endif %}
             ">{{ log.aktion|aktion_label }}</span>
           </td>
-          <td class="table-mono">{{ log.nutzer_id|default_dash }}</td>
+          <td>
+            {# Klarname statt Benutzer-ID #}
+            <div class="user-cell">
+              <div class="user-avatar-sm">
+                {% if log.nutzer_name %}{{ log.nutzer_name|first|upper }}{% else %}?{% endif %}
+              </div>
+              <span>{{ log.nutzer_name|default:log.nutzer_id }}</span>
+            </div>
+          </td>
           {% if not device %}
           <td class="table-mono">
             {% if log.geraet_id %}
@@ -75,7 +83,6 @@
     </table>
   </div>
 
-  {# Pagination (global logs only) #}
   {% if not device %}
     <div class="pagination">
       {% if has_prev %}
@@ -95,7 +102,6 @@
       <polyline points="14 2 14 8 20 8"/>
       <line x1="16" y1="13" x2="8" y2="13"/>
       <line x1="16" y1="17" x2="8" y2="17"/>
-      <polyline points="10 9 9 9 8 9"/>
     </svg>
     <p>Keine Audit-Log-Einträge vorhanden.</p>
   </div>
