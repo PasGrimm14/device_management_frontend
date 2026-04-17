@@ -47,7 +47,12 @@
           </div>
           <div class="detail-row">
             <dt>Verbleibende Verlängerungen</dt>
-            <dd>{{ loan.verlaengerungen_anzahl|add:"-2"|abs }} noch möglich</dd>
+            <dd>
+              {% if loan.verlaengerungen_anzahl == 0 %}2
+              {% elif loan.verlaengerungen_anzahl == 1 %}1
+              {% else %}0
+              {% endif %} noch möglich
+          </dd>
           </div>
         </dl>
 
