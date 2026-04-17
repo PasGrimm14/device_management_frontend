@@ -7,9 +7,27 @@
 <div class="page-hero">
   <div class="page-hero-inner">
     <h1 class="page-hero-title">Scanner</h1>
-    <p class="page-hero-sub">Gerät per QR-Code scannen → Ausleihe wird automatisch gestartet</p>
+    <p class="page-hero-sub">
+      {% if current_user.rolle == 'Administrator' %}
+        QR-Code scannen → Ausleihe starten oder Rückgabe durchführen
+      {% else %}
+        QR-Code scannen → Ausleihe wird automatisch gestartet
+      {% endif %}
+    </p>
   </div>
 </div>
+
+{# Modus-Auswahl: nur für Admins sichtbar #}
+{% if current_user.rolle == 'Administrator' %}
+<div class="tab-bar" style="margin-bottom:1.25rem">
+  <button class="tab tab--active" id="mode-ausleihe" onclick="setMode('ausleihe')">
+    Ausleihe starten
+  </button>
+  <button class="tab" id="mode-rueckgabe" onclick="setMode('rueckgabe')">
+    Rückgabe durchführen
+  </button>
+</div>
+{% endif %}
 
 <div class="scanner-tab-bar">
   <button class="scanner-tab active" data-tab="qr" id="tab-btn-qr">
@@ -33,20 +51,18 @@
   <div class="card scanner-card">
     <div class="card-header">
       <h2 class="card-title">Kamera-Scanner</h2>
-      <span class="badge badge-ok" style="font-size:.75rem">Ausleihe wird automatisch gestartet</span>
+      <span class="badge badge-ok" id="mode-badge" style="font-size:.75rem">Ausleihe wird gestartet</span>
     </div>
     <div class="card-body">
 
-      <div class="alert alert--info" style="margin-bottom:1rem">
+      <div class="alert alert--info" style="margin-bottom:1rem" id="mode-hint">
         <span>
-          <strong>So funktioniert's:</strong> Kamera starten → QR-Code am Gerät in den Rahmen halten →
-          Ausleihe wird sofort ausgelöst. Sie erhalten eine Bestätigungs-E-Mail.
+          <strong>Ausleihe:</strong> Kamera starten → QR-Code am Gerät scannen →
+          Ausleihe wird sofort ausgelöst.
         </span>
       </div>
 
       <div id="scanner-container" class="scanner-container">
-
-        {# Startzustand #}
         <div id="scanner-placeholder" class="scanner-placeholder">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
             <polyline points="23 7 23 1 17 1"/><line x1="23" y1="1" x2="14" y2="10"/>
@@ -61,7 +77,6 @@
           </button>
         </div>
 
-        {# Kamera-Overlay mit Scan-Rahmen #}
         <div id="scanner-overlay" style="display:none;position:relative">
           <video id="scanner-video" playsinline
             style="width:100%;border-radius:var(--radius-xs);display:block"></video>
@@ -89,7 +104,6 @@
 
         <canvas id="scanner-canvas" style="display:none"></canvas>
 
-        {# Lade-Zustand #}
         <div id="scanner-loading" style="display:none" class="scanner-result">
           <div class="scanner-result-icon" style="background:var(--surface-2);color:var(--muted)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"
@@ -97,10 +111,9 @@
               <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
             </svg>
           </div>
-          <p class="scanner-result-text">Ausleihe wird gestartet…</p>
+          <p class="scanner-result-text" id="loading-text">Wird verarbeitet…</p>
         </div>
 
-        {# Erfolg #}
         <div id="scanner-result" class="scanner-result" style="display:none">
           <div class="scanner-result-icon scanner-result-icon--ok">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
@@ -108,11 +121,10 @@
             </svg>
           </div>
           <p id="scanner-result-text" class="scanner-result-text"></p>
-          <a id="scanner-result-link" href="#" class="btn btn-primary btn-sm">Ausleihe anzeigen</a>
+          <a id="scanner-result-link" href="#" class="btn btn-primary btn-sm">Details anzeigen</a>
           <button id="scan-again" class="btn btn-ghost btn-sm">Weiteres Gerät scannen</button>
         </div>
 
-        {# Fehler #}
         <div id="scanner-error" class="scanner-result" style="display:none">
           <div class="scanner-result-icon scanner-result-icon--danger">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
@@ -122,7 +134,6 @@
           <p id="scanner-error-text" class="scanner-result-text"></p>
           <button id="scan-again-error" class="btn btn-ghost btn-sm">Erneut versuchen</button>
         </div>
-
       </div>
     </div>
   </div>
@@ -133,16 +144,18 @@
     </div>
     <div class="card-body">
       <p class="text-muted" style="margin-bottom:1rem">
-        Geräte-ID direkt eingeben, um die Ausleihe zu starten:
+        Geräte-ID direkt eingeben:
       </p>
       <form id="manual-scan-form" class="manual-search-form">
         <div class="form-group">
-          <label for="geraet-id-input" class="form-label">Geräte-ID oder Unique-Name</label>
+          <label for="geraet-id-input" class="form-label">Geräte-ID</label>
           <input type="text" id="geraet-id-input" class="form-control"
-            placeholder="z.B. 42 oder Laptop-Apple-1000"
+            placeholder="z.B. 42"
             autocomplete="off" inputmode="numeric">
         </div>
-        <button type="submit" class="btn btn-primary btn-full">Ausleihe starten</button>
+        <button type="submit" class="btn btn-primary btn-full" id="manual-submit-btn">
+          Ausleihe starten
+        </button>
       </form>
       <div id="manual-result" style="display:none;margin-top:1rem"></div>
     </div>
@@ -150,13 +163,18 @@
 
   <div class="card card--info">
     <div class="card-body">
-      <h3 class="info-title">So funktioniert's</h3>
-      <ul class="info-list">
+      <h3 class="info-title" id="hint-title">Ausleihe</h3>
+      <ul class="info-list" id="hint-list-ausleihe">
         <li>Scanner starten und Kamerazugriff erlauben.</li>
         <li>QR-Code am Gerät in den roten Rahmen halten.</li>
-        <li>Die Ausleihe wird automatisch in Ihrem Namen gestartet.</li>
-        <li>Sie erhalten eine Bestätigungs-E-Mail.</li>
-        <li>Das Gerät muss verfügbar oder für Sie reserviert sein.</li>
+        <li>Die Ausleihe wird automatisch gestartet.</li>
+        <li>Das Gerät muss verfügbar oder für den Nutzer reserviert sein.</li>
+      </ul>
+      <ul class="info-list" id="hint-list-rueckgabe" style="display:none">
+        <li>Modus auf „Rückgabe" umschalten.</li>
+        <li>QR-Code des zurückgegebenen Geräts scannen.</li>
+        <li>Die aktive Ausleihe wird automatisch abgeschlossen.</li>
+        <li>Nur für Administratoren verfügbar.</li>
       </ul>
     </div>
   </div>
@@ -166,13 +184,12 @@
 <div class="scanner-layout" id="tab-nfc" style="display:none">
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">NFC-Tag lesen → Ausleihe starten</h2>
+      <h2 class="card-title">NFC-Tag lesen</h2>
     </div>
     <div class="card-body">
       <div id="nfc-not-supported" class="nfc-not-supported" style="display:none">
         <strong>Aktiver NFC-Scan wird von diesem Browser nicht unterstützt.</strong><br><br>
-        <strong>iPhone (iOS 13+):</strong> NFC-Tags werden automatisch vom System erkannt —
-        einfach das iPhone an den Tag halten.<br><br>
+        <strong>iPhone (iOS 13+):</strong> NFC-Tags werden automatisch vom System erkannt.<br><br>
         <strong>Android:</strong> Chrome ab Version 89 unterstützt aktiven NFC-Scan.
       </div>
       <div id="nfc-zone" class="nfc-zone">
@@ -183,10 +200,10 @@
             <circle cx="12" cy="12.5" r="1"/>
           </svg>
         </div>
-        <p class="nfc-label" id="nfc-label">NFC-Scan starten, um Ausleihe zu beginnen</p>
+        <p class="nfc-label" id="nfc-label">NFC-Scan starten</p>
         <div id="nfc-result" style="display:none;text-align:center">
           <p id="nfc-result-text" class="scanner-result-text" style="margin-bottom:.75rem"></p>
-          <a id="nfc-result-link" href="#" class="btn btn-primary btn-sm">Ausleihe anzeigen</a>
+          <a id="nfc-result-link" href="#" class="btn btn-primary btn-sm">Details anzeigen</a>
         </div>
         <div id="nfc-actions">
           <button id="nfc-start-btn" class="btn btn-primary">NFC-Scan starten</button>
@@ -200,9 +217,8 @@
     <div class="card-body">
       <h3 class="info-title">NFC – Kompatibilität</h3>
       <ul class="info-list">
-        <li><strong>iPhone (iOS 13+):</strong> Erkennt Tags automatisch, öffnet den Link im Browser.</li>
+        <li><strong>iPhone (iOS 13+):</strong> Erkennt Tags automatisch.</li>
         <li><strong>Android (Chrome 89+):</strong> Scan über den Button, HTTPS erforderlich.</li>
-        <li>Der Tag muss eine URL im Format <code>/geraete/&lt;id&gt;/</code> enthalten.</li>
       </ul>
     </div>
   </div>
@@ -219,13 +235,53 @@
 {% endblock %}
 
 {% block extra_js %}
-{# jsQR: reines JS, funktioniert auf Safari, Firefox und allen Android-Browsern #}
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
 (function () {
-  const API_BASE = '{{ API_PUBLIC_URL }}';
-  const TOKEN    = '{{ request.api_token }}';
+  const API_BASE  = '{{ API_PUBLIC_URL }}';
+  const TOKEN     = '{{ request.api_token }}';
+  const IS_ADMIN  = '{{ current_user.rolle }}' === 'Administrator';
+
+  // Aktueller Modus: 'ausleihe' oder 'rueckgabe'
+  let currentMode = 'ausleihe';
+
+  // ── Modus-Umschalter (nur für Admins) ─────────────────────────────────────
+  window.setMode = function(mode) {
+    currentMode = mode;
+    resetScanner();
+
+    const btnAusleihe  = document.getElementById('mode-ausleihe');
+    const btnRueckgabe = document.getElementById('mode-rueckgabe');
+    const badge        = document.getElementById('mode-badge');
+    const hint         = document.getElementById('mode-hint');
+    const hintTitle    = document.getElementById('hint-title');
+    const hintAusleihe = document.getElementById('hint-list-ausleihe');
+    const hintRueckgabe= document.getElementById('hint-list-rueckgabe');
+    const manualBtn    = document.getElementById('manual-submit-btn');
+
+    if (mode === 'rueckgabe') {
+      btnAusleihe  && btnAusleihe.classList.remove('tab--active');
+      btnRueckgabe && btnRueckgabe.classList.add('tab--active');
+      badge.textContent  = 'Rückgabe wird durchgeführt';
+      badge.className    = 'badge badge-warn';
+      hint.innerHTML     = '<span><strong>Rückgabe:</strong> QR-Code des zurückgegebenen Geräts scannen → aktive Ausleihe wird abgeschlossen.</span>';
+      hintTitle.textContent = 'Rückgabe';
+      hintAusleihe.style.display  = 'none';
+      hintRueckgabe.style.display = '';
+      manualBtn.textContent = 'Rückgabe durchführen';
+    } else {
+      btnAusleihe  && btnAusleihe.classList.add('tab--active');
+      btnRueckgabe && btnRueckgabe.classList.remove('tab--active');
+      badge.textContent  = 'Ausleihe wird gestartet';
+      badge.className    = 'badge badge-ok';
+      hint.innerHTML     = '<span><strong>Ausleihe:</strong> Kamera starten → QR-Code am Gerät scannen → Ausleihe wird sofort ausgelöst.</span>';
+      hintTitle.textContent = 'Ausleihe';
+      hintAusleihe.style.display  = '';
+      hintRueckgabe.style.display = 'none';
+      manualBtn.textContent = 'Ausleihe starten';
+    }
+  };
 
   // ── Tab switching ──────────────────────────────────────────────────────────
   document.querySelectorAll('.scanner-tab').forEach(btn => {
@@ -239,16 +295,17 @@
   });
 
   // ── DOM-Referenzen ─────────────────────────────────────────────────────────
-  const placeholder = document.getElementById('scanner-placeholder');
-  const overlay     = document.getElementById('scanner-overlay');
-  const video       = document.getElementById('scanner-video');
-  const canvas      = document.getElementById('scanner-canvas');
-  const loadingDiv  = document.getElementById('scanner-loading');
-  const resultDiv   = document.getElementById('scanner-result');
-  const errorDiv    = document.getElementById('scanner-error');
-  const resultText  = document.getElementById('scanner-result-text');
-  const resultLink  = document.getElementById('scanner-result-link');
-  const errorText   = document.getElementById('scanner-error-text');
+  const placeholder  = document.getElementById('scanner-placeholder');
+  const overlay      = document.getElementById('scanner-overlay');
+  const video        = document.getElementById('scanner-video');
+  const canvas       = document.getElementById('scanner-canvas');
+  const loadingDiv   = document.getElementById('scanner-loading');
+  const loadingText  = document.getElementById('loading-text');
+  const resultDiv    = document.getElementById('scanner-result');
+  const errorDiv     = document.getElementById('scanner-error');
+  const resultText   = document.getElementById('scanner-result-text');
+  const resultLink   = document.getElementById('scanner-result-link');
+  const errorText    = document.getElementById('scanner-error-text');
 
   let stream    = null;
   let scanning  = false;
@@ -262,11 +319,11 @@
     resultDiv.style.display   = 'none';
     errorDiv.style.display    = 'none';
   }
-  function showCamera()       { hideAll(); overlay.style.display    = 'block'; }
-  function showLoading()      { stopScanner(); hideAll(); loadingDiv.style.display = 'flex'; }
-  function showSuccess(m, l)  { hideAll(); resultText.textContent = m; resultLink.href = l; resultDiv.style.display = 'flex'; }
-  function showError(m)       { hideAll(); errorText.textContent  = m; errorDiv.style.display  = 'flex'; }
-  function resetScanner()     { hideAll(); placeholder.style.display = 'flex'; }
+  function showCamera()      { hideAll(); overlay.style.display   = 'block'; }
+  function showLoading(msg)  { stopScanner(); hideAll(); loadingText.textContent = msg || 'Wird verarbeitet…'; loadingDiv.style.display = 'flex'; }
+  function showSuccess(m, l) { hideAll(); resultText.textContent = m; resultLink.href = l; resultDiv.style.display = 'flex'; }
+  function showError(m)      { hideAll(); errorText.textContent = m; errorDiv.style.display = 'flex'; }
+  function resetScanner()    { hideAll(); placeholder.style.display = 'flex'; }
 
   function stopScanner() {
     scanning = false;
@@ -275,7 +332,7 @@
     video.srcObject = null;
   }
 
-  // ── Geräte-ID aus URL oder reiner Zahl ────────────────────────────────────
+  // ── Geräte-ID extrahieren ──────────────────────────────────────────────────
   function extractGeraetId(value) {
     const m = value.match(/\/geraete\/(\d+)/);
     if (m) return m[1];
@@ -283,9 +340,17 @@
     return null;
   }
 
-  // ── Ausleihe via API ───────────────────────────────────────────────────────
+  // ── API-Aktion je nach Modus ───────────────────────────────────────────────
+  async function handleGeraetId(geraetId) {
+    if (currentMode === 'rueckgabe') {
+      await startRueckgabe(geraetId);
+    } else {
+      await startAusleihe(geraetId);
+    }
+  }
+
   async function startAusleihe(geraetId) {
-    showLoading();
+    showLoading('Ausleihe wird gestartet…');
     try {
       const resp = await fetch(`${API_BASE}/api/v1/geraete/${geraetId}/scan-ausleihe`, {
         method: 'POST',
@@ -307,11 +372,27 @@
     }
   }
 
-  // ── QR-Erkennung: BarcodeDetector (nativ) oder jsQR (Fallback) ────────────
-  //
-  // BarcodeDetector: Chrome Desktop, Chrome Android
-  // jsQR:            Safari (iPhone/iPad), Firefox, Samsung Internet, alle anderen
-  //
+  async function startRueckgabe(geraetId) {
+    showLoading('Rückgabe wird durchgeführt…');
+    try {
+      const resp = await fetch(`${API_BASE}/api/v1/geraete/${geraetId}/scan-rueckgabe`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${TOKEN}` },
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        const name = data.geraet ? data.geraet.name : `Gerät #${data.geraet_id}`;
+        showSuccess(`Rückgabe erfolgreich: ${name}`, `/ausleihen/${data.id}/`);
+      } else {
+        const msg = data.detail || `Fehler ${resp.status}`;
+        showError(Array.isArray(msg) ? msg.map(e => e.msg).join(', ') : String(msg));
+      }
+    } catch (e) {
+      showError('Verbindungsfehler – bitte erneut versuchen.');
+    }
+  }
+
+  // ── QR-Erkennung ──────────────────────────────────────────────────────────
   let nativeDetector = null;
   if ('BarcodeDetector' in window) {
     try { nativeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (_) {}
@@ -319,7 +400,6 @@
 
   async function detectFrame() {
     if (!scanning) return;
-
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
       canvas.width  = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -327,16 +407,12 @@
       ctx.drawImage(video, 0, 0);
 
       let decoded = null;
-
-      // Versuch 1 – nativ (schneller, kein CPU-Overhead)
       if (nativeDetector) {
         try {
           const codes = await nativeDetector.detect(canvas);
           if (codes.length) decoded = codes[0].rawValue;
         } catch (_) {}
       }
-
-      // Versuch 2 – jsQR (universell, funktioniert überall)
       if (!decoded && typeof jsQR !== 'undefined') {
         const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
@@ -347,14 +423,13 @@
         scanning = false;
         const id = extractGeraetId(decoded);
         if (id) {
-          await startAusleihe(id);
+          await handleGeraetId(id);
         } else {
           showError(`Unbekannter QR-Code: ${decoded}`);
         }
         return;
       }
     }
-
     if (scanning) rafHandle = requestAnimationFrame(detectFrame);
   }
 
@@ -387,7 +462,7 @@
     const val = document.getElementById('geraet-id-input').value.trim();
     const id  = extractGeraetId(val);
     if (id) {
-      await startAusleihe(id);
+      await handleGeraetId(id);
     } else {
       const el = document.getElementById('manual-result');
       el.innerHTML     = '<div class="alert alert--error">Bitte eine gültige Geräte-ID (Zahl) eingeben.</div>';
@@ -438,30 +513,36 @@
 
           const id = extractGeraetId(value);
           if (!id) {
-            nfcIcon.className      = 'nfc-icon nfc-icon--error';
-            nfcLabel.textContent   = 'Kein gültiger Geräte-Tag.';
-            nfcErrText.textContent = `Inhalt: ${value || 'leer'}`;
+            nfcIcon.className        = 'nfc-icon nfc-icon--error';
+            nfcLabel.textContent     = 'Kein gültiger Geräte-Tag.';
+            nfcErrText.textContent   = `Inhalt: ${value || 'leer'}`;
             nfcErrText.style.display = 'block';
             return;
           }
 
           nfcIcon.className    = 'nfc-icon nfc-icon--scanning';
-          nfcLabel.textContent = 'Ausleihe wird gestartet…';
+          nfcLabel.textContent = currentMode === 'rueckgabe'
+            ? 'Rückgabe wird durchgeführt…'
+            : 'Ausleihe wird gestartet…';
 
-          const resp = await fetch(`${API_BASE}/api/v1/geraete/${id}/scan-ausleihe`, {
+          const endpoint = currentMode === 'rueckgabe'
+            ? `${API_BASE}/api/v1/geraete/${id}/scan-rueckgabe`
+            : `${API_BASE}/api/v1/geraete/${id}/scan-ausleihe`;
+
+          const resp = await fetch(endpoint, {
             method: 'POST', headers: { 'Authorization': `Bearer ${TOKEN}` },
           });
           const data = await resp.json();
 
           if (resp.ok) {
             nfcIcon.className         = 'nfc-icon nfc-icon--ok';
-            nfcLabel.textContent      = 'Ausleihe gestartet!';
+            nfcLabel.textContent      = currentMode === 'rueckgabe' ? 'Rückgabe erfolgreich!' : 'Ausleihe gestartet!';
             nfcResultText.textContent = data.geraet ? data.geraet.name : `Gerät #${data.geraet_id}`;
             nfcResultLink.href        = `/ausleihen/${data.id}/`;
             nfcResult.style.display   = 'block';
           } else {
             nfcIcon.className        = 'nfc-icon nfc-icon--error';
-            nfcLabel.textContent     = 'Fehler beim Starten der Ausleihe.';
+            nfcLabel.textContent     = 'Fehler.';
             nfcErrText.textContent   = data.detail || `Fehler ${resp.status}`;
             nfcErrText.style.display = 'block';
           }
@@ -473,12 +554,11 @@
           nfcStartBtn.style.display = '';
           nfcStopBtn.style.display  = 'none';
         });
-
       } catch (e) {
-        nfcIcon.className        = 'nfc-icon nfc-icon--error';
-        nfcLabel.textContent     = 'NFC-Fehler';
-        nfcErrText.textContent   = e.message;
-        nfcErrText.style.display = 'block';
+        nfcIcon.className         = 'nfc-icon nfc-icon--error';
+        nfcLabel.textContent      = 'NFC-Fehler';
+        nfcErrText.textContent    = e.message;
+        nfcErrText.style.display  = 'block';
         nfcStartBtn.style.display = '';
         nfcStopBtn.style.display  = 'none';
       }

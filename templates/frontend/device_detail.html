@@ -141,7 +141,7 @@
     </div>
     {% endif %}
 
-    {# Eigene aktive Ausleihe: Verlängern/Zurückgeben #}
+    {# Eigene aktive Ausleihe: nur Verlängern, kein Zurückgeben für User #}
     {% if active_loan %}
     <div class="card card--warn">
       <div class="card-header">
@@ -170,6 +170,8 @@
           {% if active_loan|can_extend %}
             <a href="/ausleihen/{{ active_loan.id }}/verlaengern/" class="btn btn-primary btn-sm">Verlängern</a>
           {% endif %}
+          {# Rückgabe nur durch Admin – kein Button für normale User #}
+          {% if current_user.rolle == 'Administrator' %}
           <form method="post" action="/ausleihen/{{ active_loan.id }}/rueckgabe/" style="display:inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger btn-sm"
@@ -177,6 +179,7 @@
               Zurückgeben
             </button>
           </form>
+          {% endif %}
         </div>
       </div>
     </div>

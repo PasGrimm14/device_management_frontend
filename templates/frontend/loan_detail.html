@@ -96,6 +96,9 @@
               Maximale Verlängerungen (2) bereits erreicht.
             </div>
           {% endif %}
+
+          {# Rückgabe nur für Admins #}
+          {% if current_user.rolle == 'Administrator' %}
           <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/">
             {% csrf_token %}
             <div class="form-group" style="margin-bottom:.75rem">
@@ -111,6 +114,12 @@
               Gerät zurückgeben
             </button>
           </form>
+          {% else %}
+          <div class="status-note status-note--neutral" style="font-size:.85rem">
+            Die Rückgabe wird durch einen Administrator durchgeführt.
+          </div>
+          {% endif %}
+
         {% else %}
           <div class="status-note status-note--neutral">
             Diese Ausleihe ist abgeschlossen.

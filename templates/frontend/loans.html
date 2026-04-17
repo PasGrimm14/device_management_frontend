@@ -12,7 +12,6 @@
   </div>
 </div>
 
-{# Status Filter Tabs #}
 <div class="tab-bar">
   <a href="/ausleihen/" class="tab {% if not status_filter %}tab--active{% endif %}">Alle</a>
   <a href="/ausleihen/?status=aktiv" class="tab {% if status_filter == 'aktiv' %}tab--active{% endif %}">Aktiv</a>
@@ -48,19 +47,22 @@
         <div class="list-item-actions">
           {{ loan.status|ausleihe_status_badge }}
           <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
-          {% if loan.status in 'aktiv,überfällig' %}
+
+          {% if loan.status == 'aktiv' or loan.status == 'überfällig' %}
             {% if loan|can_extend %}
               <a href="/ausleihen/{{ loan.id }}/verlaengern/" class="btn btn-ghost btn-sm">Verlängern</a>
             {% endif %}
+
+            {# Rückgabe nur für Admins #}
+            {% if current_user.rolle == 'Administrator' %}
             <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/" style="display:inline">
               {% csrf_token %}
-              <input type="text" name="zustand" class="form-control form-control--sm"
-                placeholder="Schäden oder Auffälligkeiten…" style="display:inline-block;width:auto;margin-right:.5rem">
               <button type="submit" class="btn btn-danger btn-sm"
                 onclick="return confirm('Gerät jetzt zurückgeben?')">
                 Zurückgeben
               </button>
             </form>
+            {% endif %}
           {% endif %}
         </div>
       </div>
@@ -72,7 +74,7 @@
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
     </svg>
     <p>Keine Ausleihen vorhanden.</p>
-    <a href="/geraete/" class="btn btn-primary btn-sm">Gerät ausleihen</a>
+    <a href="/geraete/" class="btn btn-ghost btn-sm">Gerät reservieren</a>
   </div>
 {% endif %}
 {% endblock %}
