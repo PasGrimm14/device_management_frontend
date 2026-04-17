@@ -1275,3 +1275,77 @@ details[open] .faq-question::after { content: '–'; }
   .filter-form { flex-direction: column; align-items: stretch; }
   .filter-search { min-width: unset; }
 }
+
+/* ---------------------------------------------------------
+   35. Role Switcher (Topbar)
+   --------------------------------------------------------- */
+
+.role-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 0.2rem 0.2rem 0.2rem 0.5rem;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.role-badge--admin {
+  color: var(--primary);
+}
+
+.role-badge--user {
+  color: var(--muted);
+}
+
+.role-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.role-switch-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(226,0,26,0.2);
+}
+
+/* Hide text label on small screens, keep icon */
+@media (max-width: 768px) {
+  .role-switch-btn span,
+  .role-switcher .role-switch-btn {
+    padding: 0.3rem 0.45rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .role-switcher {
+    padding: 0.15rem 0.15rem 0.15rem 0.35rem;
+  }
+  .role-badge {
+    font-size: 0.68rem;
+  }
+}

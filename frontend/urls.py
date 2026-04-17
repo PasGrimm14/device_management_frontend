@@ -31,6 +31,7 @@ urlpatterns = [
 
     # Profile
     path('profil/', profile.profile_view, name='profile'),
+    path('rolle-wechseln/', profile.role_switch_view, name='role_switch'),
 
     # Help & Scanner
     path('hilfe/', profile.help_view, name='help'),

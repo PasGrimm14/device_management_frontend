@@ -2,7 +2,7 @@
 Profile, help, and scanner views for DHBW Gerätemanagement Frontend.
 """
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib import messages
 
 from frontend.decorators import login_required
@@ -50,6 +50,35 @@ def profile_view(request):
         pass
 
     return render(request, 'frontend/profile.html', context)
+
+
+@login_required
+def role_switch_view(request):
+    """
+    Toggles the active role between Administrator and Studierende_Mitarbeitende.
+    Only available to users whose real role is Administrator.
+    Stores the active role in the session under 'active_role'.
+    """
+    # Guard against real_role, NOT current_user.rolle – the middleware already
+    # overwrites current_user.rolle with the active (possibly switched) role,
+    # so checking it would lock out Admins who are currently in User mode.
+    real_role = getattr(request, 'real_role', None)
+    if real_role != 'Administrator':
+        messages.error(request, 'Nur Administratoren können die Rolle wechseln.')
+        return redirect('/')
+
+    current_active = request.session.get('active_role', 'Administrator')
+    if current_active == 'Administrator':
+        request.session['active_role'] = 'Studierende_Mitarbeitende'
+        messages.success(request, 'Ansicht gewechselt: Sie sehen die App jetzt als Studierende/Mitarbeitende.')
+    else:
+        request.session['active_role'] = 'Administrator'
+        messages.success(request, 'Ansicht gewechselt: Sie sehen die App jetzt als Administrator.')
+
+    request.session.modified = True
+    # Redirect back to previous page or dashboard
+    next_url = request.META.get('HTTP_REFERER', '/')
+    return redirect(next_url)
 
 
 @login_required
