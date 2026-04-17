@@ -24,6 +24,7 @@ CSRF_TRUSTED_ORIGINS = [url.strip() for url in csrf_trusted_env.split(',')]
 
 # API Backend URL – muss auf das FastAPI-Backend zeigen, z.B. https://dhbw.pasgri-cloud.de
 API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:8000')
+API_PUBLIC_URL = os.environ.get('API_PUBLIC_URL', API_BASE_URL)
 
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
