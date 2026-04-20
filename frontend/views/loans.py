@@ -1,6 +1,5 @@
 """
 Loan views for DHBW Gerätemanagement Frontend.
-List, detail, create, extend, and return loans.
 """
 
 from django.shortcuts import render, redirect
@@ -13,21 +12,14 @@ from frontend.services.api_client import get_client, APIError
 
 @login_required
 def loan_list_view(request):
-    """
-    Loan list page.
-    Users see their own loans; admins see all loans.
-    Supports filter by status.
-    """
     client = get_client(request)
     status_filter = request.GET.get('status', '')
-
     context = {
         'current_user': request.current_user,
         'loans': [],
         'status_filter': status_filter,
         'error': None,
     }
-
     try:
         loans = client.get_loans(limit=200)
         loans.sort(key=lambda l: l.get('geplantes_rueckgabedatum') or '')
@@ -36,20 +28,17 @@ def loan_list_view(request):
         context['loans'] = loans
     except APIError as e:
         context['error'] = f'Ausleihliste konnte nicht geladen werden: {e.detail}'
-
     return render(request, 'frontend/loans.html', context)
 
 
 @login_required
 def loan_detail_view(request, loan_id: int):
-    """Loan detail page with extend and return actions."""
     client = get_client(request)
     context = {
         'current_user': request.current_user,
         'loan': None,
         'error': None,
     }
-
     try:
         loan = client.get_loan(loan_id)
         context['loan'] = loan
@@ -58,30 +47,21 @@ def loan_detail_view(request, loan_id: int):
             context['error'] = 'Ausleihe nicht gefunden.'
         else:
             context['error'] = f'Ausleihe konnte nicht geladen werden: {e.detail}'
-
     return render(request, 'frontend/loan_detail.html', context)
 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
 def loan_create_view(request, device_id: int):
-    """
-    Loan request form for a specific device.
-    Only collects geplantes_rueckgabedatum; geraet_id comes from URL.
-    """
     client = get_client(request)
     context = {
         'current_user': request.current_user,
         'device': None,
         'error': None,
     }
-
-    # Load device info for display
     try:
         device = client.get_device(device_id)
         context['device'] = device
-
-        # Check if device is available
         if device.get('status') != 'verfügbar':
             messages.warning(
                 request,
@@ -94,12 +74,8 @@ def loan_create_view(request, device_id: int):
 
     if request.method == 'POST':
         geplantes_rueckgabedatum = request.POST.get('geplantes_rueckgabedatum', '').strip() or None
-
         try:
-            loan = client.create_loan(
-                geraet_id=device_id,
-                geplantes_rueckgabedatum=geplantes_rueckgabedatum,
-            )
+            loan = client.create_loan(geraet_id=device_id, geplantes_rueckgabedatum=geplantes_rueckgabedatum)
             messages.success(
                 request,
                 f'Ausleihe erfolgreich erstellt! '
@@ -120,17 +96,12 @@ def loan_create_view(request, device_id: int):
 @login_required
 @require_http_methods(['GET', 'POST'])
 def loan_extend_view(request, loan_id: int):
-    """
-    Extend a loan by 14 days (max 2 extensions).
-    GET shows confirmation page; POST calls the API.
-    """
     client = get_client(request)
     context = {
         'current_user': request.current_user,
         'loan': None,
         'error': None,
     }
-
     try:
         loan = client.get_loan(loan_id)
         context['loan'] = loan
@@ -139,21 +110,24 @@ def loan_extend_view(request, loan_id: int):
         return render(request, 'frontend/loan_extend.html', context)
 
     if request.method == 'POST':
+        langzeit = request.POST.get('langzeit') == '1'
         try:
-            updated_loan = client.extend_loan(loan_id)
-            messages.success(
-                request,
-                f'Ausleihe erfolgreich verlängert! '
-                f'Neues Rückgabedatum: {updated_loan.get("geplantes_rueckgabedatum", "unbekannt")}.'
-            )
+            updated_loan = client.extend_loan(loan_id, langzeit=langzeit)
+            if langzeit:
+                msg = f'Langzeit-Verlängerung erfolgreich! Neues Rückgabedatum: {updated_loan.get("geplantes_rueckgabedatum", "unbekannt")}.'
+            else:
+                msg = f'Ausleihe erfolgreich verlängert! Neues Rückgabedatum: {updated_loan.get("geplantes_rueckgabedatum", "unbekannt")}.'
+            messages.success(request, msg)
             return redirect(f'/ausleihen/{loan_id}/')
         except APIError as e:
             if e.status_code == 400:
-                messages.error(request, 'Maximale Anzahl an Verlängerungen (2) bereits erreicht.')
+                messages.error(request, 'Maximale Anzahl an Verlängerungen bereits erreicht.')
             elif e.status_code == 403:
                 messages.error(request, 'Sie sind nicht berechtigt, diese Ausleihe zu verlängern.')
             elif e.status_code == 404:
                 messages.error(request, 'Ausleihe nicht gefunden.')
+            elif e.status_code == 409:
+                messages.error(request, e.detail)
             else:
                 messages.error(request, f'Verlängerung fehlgeschlagen: {e.detail}')
 
@@ -163,12 +137,7 @@ def loan_extend_view(request, loan_id: int):
 @login_required
 @require_http_methods(['POST'])
 def loan_return_view(request, loan_id: int):
-    """
-    Return a device. POST-only action.
-    Redirects to loan list on success.
-    """
     client = get_client(request)
-
     zustand = request.POST.get('zustand', '').strip() or None
     try:
         client.return_loan_with_condition(loan_id, zustand=zustand)
@@ -182,5 +151,4 @@ def loan_return_view(request, loan_id: int):
             messages.error(request, 'Ausleihe nicht gefunden.')
         else:
             messages.error(request, f'Rückgabe fehlgeschlagen: {e.detail}')
-
     return redirect('/ausleihen/')

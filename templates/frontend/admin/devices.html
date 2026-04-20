@@ -22,7 +22,6 @@
   </div>
 </div>
 
-{# Filter Bar #}
 <div class="filter-bar">
   <form method="get" action="/admin/geraete/" class="filter-form">
     <div class="filter-search">
@@ -60,6 +59,7 @@
           <th>Hersteller / Modell</th>
           <th>Standort</th>
           <th>Status</th>
+          <th>Optionen</th>
           <th>Aktionen</th>
         </tr>
       </thead>
@@ -77,6 +77,18 @@
           </td>
           <td>{% if device.box_id %}Box #{{ device.box_id }}{% else %}–{% endif %}</td>
           <td>{{ device.status|geraet_status_badge }}</td>
+          <td>
+            {% if device.langzeit_ausleihe %}
+              <span class="badge badge-warn" title="Langzeit-Ausleihe erlaubt">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-right:.2rem">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Langzeit
+              </span>
+            {% else %}
+              <span class="text-muted" style="font-size:.8rem">–</span>
+            {% endif %}
+          </td>
           <td>
             <div class="table-actions">
               <a href="/geraete/{{ device.id }}/" class="btn btn-ghost btn-xs" title="Ansehen">
@@ -97,7 +109,7 @@
                   <polyline points="14 2 14 8 20 8"/>
                 </svg>
               </a>
-              <a href="/geraete/{{ device.id }}/qr-code/" class="btn btn-ghost btn-xs" title="QR-Code herunterladen">
+              <a href="/geraete/{{ device.id }}/qr-code/" class="btn btn-ghost btn-xs" title="QR-Code">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                   <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
                   <rect x="3" y="14" width="7" height="7"/>

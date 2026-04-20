@@ -12,7 +12,6 @@
   </div>
 </div>
 
-{# Status Filter Tabs #}
 <div class="tab-bar">
   <a href="/reservierungen/" class="tab {% if not status_filter %}tab--active{% endif %}">Alle</a>
   <a href="/reservierungen/?status=aktiv" class="tab {% if status_filter == 'aktiv' %}tab--active{% endif %}">Aktiv</a>
@@ -41,8 +40,11 @@
             {% if reservation.geraet %}{{ reservation.geraet.name }}{% else %}Gerät #{{ reservation.geraet_id }}{% endif %}
           </div>
           <div class="list-item-meta">
-            <span>Reserviert für {{ reservation.reserviert_fuer_datum|format_date }}</span>
+            <span>Abholdatum: {{ reservation.reserviert_fuer_datum|format_date }}</span>
             <span>· Erstellt am {{ reservation.erstellt_am|format_date }}</span>
+            {% if reservation.ablaufdatum %}
+              <span>· Ablauf: {{ reservation.ablaufdatum|format_date }}</span>
+            {% endif %}
           </div>
         </div>
         <div class="list-item-actions">

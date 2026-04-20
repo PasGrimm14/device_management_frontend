@@ -1,26 +1,19 @@
 """
 Custom template tags and filters for DHBW Gerätemanagement Frontend.
-Provides status badges, date formatting, and other helpers.
 """
 
 from django import template
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 register = template.Library()
 
-
-# ---------------------------------------------------------------------------
-# Status Badge Filters
-# ---------------------------------------------------------------------------
-
-# Map GeraeteStatus values to badge CSS classes
 GERAET_STATUS_CLASSES = {
     'verfügbar': 'badge-ok',
     'ausgeliehen': 'badge-warn',
     'reserviert': 'badge-neutral',
     'defekt': 'badge-danger',
     'außer Betrieb': 'badge-danger',
+    'zur Zeit nicht vorhanden': 'badge-neutral',
 }
 
 GERAET_STATUS_LABELS = {
@@ -29,9 +22,9 @@ GERAET_STATUS_LABELS = {
     'reserviert': 'Reserviert',
     'defekt': 'Defekt',
     'außer Betrieb': 'Außer Betrieb',
+    'zur Zeit nicht vorhanden': 'Zur Zeit nicht vorhanden',
 }
 
-# Map AusleihStatus values to badge CSS classes
 AUSLEIHE_STATUS_CLASSES = {
     'aktiv': 'badge-ok',
     'überfällig': 'badge-danger',
@@ -44,7 +37,6 @@ AUSLEIHE_STATUS_LABELS = {
     'abgeschlossen': 'Abgeschlossen',
 }
 
-# Map ReservierungsStatus values to badge CSS classes
 RESERVIERUNG_STATUS_CLASSES = {
     'aktiv': 'badge-ok',
     'erfüllt': 'badge-neutral',
@@ -57,13 +49,11 @@ RESERVIERUNG_STATUS_LABELS = {
     'storniert': 'Storniert',
 }
 
-# Map BenutzerRolle values
 BENUTZER_ROLLE_LABELS = {
     'Studierende_Mitarbeitende': 'Studierende/Mitarbeitende',
     'Administrator': 'Administrator',
 }
 
-# Map AktionType values
 AKTION_LABELS = {
     'angelegt': 'Angelegt',
     'bearbeitet': 'Bearbeitet',
@@ -77,10 +67,6 @@ AKTION_LABELS = {
 
 @register.filter(name='geraet_status_badge')
 def geraet_status_badge(status: str) -> str:
-    """
-    Returns an HTML badge span for a GeraeteStatus value.
-    Usage: {{ device.status|geraet_status_badge }}
-    """
     css_class = GERAET_STATUS_CLASSES.get(status, 'badge-neutral')
     label = GERAET_STATUS_LABELS.get(status, status)
     return format_html('<span class="badge {}">{}</span>', css_class, label)
@@ -88,10 +74,6 @@ def geraet_status_badge(status: str) -> str:
 
 @register.filter(name='ausleihe_status_badge')
 def ausleihe_status_badge(status: str) -> str:
-    """
-    Returns an HTML badge span for an AusleihStatus value.
-    Usage: {{ loan.status|ausleihe_status_badge }}
-    """
     css_class = AUSLEIHE_STATUS_CLASSES.get(status, 'badge-neutral')
     label = AUSLEIHE_STATUS_LABELS.get(status, status)
     return format_html('<span class="badge {}">{}</span>', css_class, label)
@@ -99,10 +81,6 @@ def ausleihe_status_badge(status: str) -> str:
 
 @register.filter(name='reservierung_status_badge')
 def reservierung_status_badge(status: str) -> str:
-    """
-    Returns an HTML badge span for a ReservierungsStatus value.
-    Usage: {{ reservation.status|reservierung_status_badge }}
-    """
     css_class = RESERVIERUNG_STATUS_CLASSES.get(status, 'badge-neutral')
     label = RESERVIERUNG_STATUS_LABELS.get(status, status)
     return format_html('<span class="badge {}">{}</span>', css_class, label)
@@ -110,33 +88,20 @@ def reservierung_status_badge(status: str) -> str:
 
 @register.filter(name='rolle_label')
 def rolle_label(rolle: str) -> str:
-    """
-    Returns German label for a BenutzerRolle value.
-    Usage: {{ user.rolle|rolle_label }}
-    """
     return BENUTZER_ROLLE_LABELS.get(rolle, rolle)
 
 
 @register.filter(name='aktion_label')
 def aktion_label(aktion: str) -> str:
-    """
-    Returns German label for an AktionType value.
-    Usage: {{ log.aktion|aktion_label }}
-    """
     return AKTION_LABELS.get(aktion, aktion)
 
 
 @register.filter(name='format_date')
 def format_date(value: str) -> str:
-    """
-    Format an ISO date string (YYYY-MM-DD or ISO datetime) to German format (DD.MM.YYYY).
-    Usage: {{ device.anschaffungsdatum|format_date }}
-    """
     if not value:
         return '–'
     try:
         from datetime import datetime
-        # Handle ISO datetime strings
         if 'T' in str(value):
             dt = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
         else:
@@ -148,10 +113,6 @@ def format_date(value: str) -> str:
 
 @register.filter(name='format_datetime')
 def format_datetime(value: str) -> str:
-    """
-    Format an ISO datetime string to German format (DD.MM.YYYY HH:MM).
-    Usage: {{ log.zeitstempel|format_datetime }}
-    """
     if not value:
         return '–'
     try:
@@ -164,13 +125,11 @@ def format_datetime(value: str) -> str:
 
 @register.filter(name='geraet_status_class')
 def geraet_status_class(status: str) -> str:
-    """Returns CSS class for a GeraeteStatus (without HTML). For use in class attributes."""
     return GERAET_STATUS_CLASSES.get(status, 'badge-neutral')
 
 
 @register.simple_tag
 def is_admin(user) -> bool:
-    """Returns True if the user dict has rolle == 'Administrator'."""
     if not user:
         return False
     return user.get('rolle') == 'Administrator'
@@ -178,7 +137,6 @@ def is_admin(user) -> bool:
 
 @register.filter(name='can_extend')
 def can_extend(loan) -> bool:
-    """Returns True if a loan can still be extended (verlaengerungen_anzahl < 2)."""
     if not loan:
         return False
     return (
@@ -187,7 +145,18 @@ def can_extend(loan) -> bool:
     )
 
 
+@register.filter(name='can_extend_langzeit')
+def can_extend_langzeit(loan) -> bool:
+    """Zeigt die Langzeit-Option an, wenn Gerät das Flag hat und es noch nicht genutzt wurde."""
+    if not loan:
+        return False
+    geraet = loan.get('geraet') or {}
+    langzeit_aktiv = geraet.get('langzeit_ausleihe', False)
+    bereits_genutzt = loan.get('langzeit_verlaengerung_genutzt', False)
+    status_ok = loan.get('status') in ('aktiv', 'überfällig')
+    return langzeit_aktiv and not bereits_genutzt and status_ok
+
+
 @register.filter(name='default_dash')
 def default_dash(value) -> str:
-    """Returns '–' if value is falsy, otherwise the value itself."""
     return value if value else '–'

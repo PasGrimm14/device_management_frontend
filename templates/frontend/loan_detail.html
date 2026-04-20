@@ -42,6 +42,9 @@
             <dd>
               {% if loan.geraet %}
                 <a href="/geraete/{{ loan.geraet_id }}/" class="link">{{ loan.geraet.name }}</a>
+                {% if loan.geraet.langzeit_ausleihe %}
+                  <span class="badge badge-warn" style="margin-left:.5rem;font-size:.7rem">Langzeit-Option</span>
+                {% endif %}
               {% else %}
                 Gerät #{{ loan.geraet_id }}
               {% endif %}
@@ -58,7 +61,7 @@
           {% if loan.geplantes_rueckgabedatum %}
           <div class="detail-row">
             <dt>Geplante Rückgabe</dt>
-            <dd>{{ loan.geplantes_rueckgabedatum|format_date }}</dd>
+            <dd><strong>{{ loan.geplantes_rueckgabedatum|format_date }}</strong></dd>
           </div>
           {% endif %}
           {% if loan.tatsaechliches_rueckgabedatum %}
@@ -68,9 +71,21 @@
           </div>
           {% endif %}
           <div class="detail-row">
-            <dt>Verlängerungen</dt>
+            <dt>Standard-Verlängerungen</dt>
             <dd>{{ loan.verlaengerungen_anzahl }} von 2 genutzt</dd>
           </div>
+          {% if loan.geraet.langzeit_ausleihe %}
+          <div class="detail-row">
+            <dt>Langzeit-Verlängerung</dt>
+            <dd>
+              {% if loan.langzeit_verlaengerung_genutzt %}
+                <span class="badge badge-neutral">Bereits genutzt</span>
+              {% else %}
+                <span class="badge badge-ok">Verfügbar (+80 Tage)</span>
+              {% endif %}
+            </dd>
+          </div>
+          {% endif %}
         </dl>
       </div>
     </div>
@@ -83,17 +98,19 @@
       </div>
       <div class="card-body action-stack">
         {% if loan.status == 'aktiv' or loan.status == 'überfällig' %}
-          {% if loan|can_extend %}
+
+          {# Standard-Verlängerung #}
+          {% if loan|can_extend or loan|can_extend_langzeit %}
             <a href="/ausleihen/{{ loan.id }}/verlaengern/" class="btn btn-primary btn-full">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <polyline points="23 4 23 10 17 10"/>
                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
               </svg>
-              Verlängern (+14 Tage)
+              Verlängern
             </a>
           {% else %}
             <div class="status-note status-note--neutral">
-              Maximale Verlängerungen (2) bereits erreicht.
+              Maximale Verlängerungen erreicht.
             </div>
           {% endif %}
 
@@ -106,11 +123,7 @@
                 placeholder="Schäden oder Auffälligkeiten…">
             </div>
             <button type="submit" class="btn btn-danger btn-full"
-              onclick="return confirm('Gerät jetzt zurückgeben? Diese Aktion kann nicht rückgängig gemacht werden.')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-              </svg>
+              onclick="return confirm('Gerät jetzt zurückgeben?')">
               Gerät zurückgeben
             </button>
           </form>

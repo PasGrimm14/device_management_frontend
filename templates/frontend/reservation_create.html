@@ -43,7 +43,7 @@
 
           <div class="form-group">
             <label for="reserviert_fuer_datum" class="form-label">
-              Reservierungsdatum
+              Voraussichtliches Abholdatum
               <span class="form-label-required">*</span>
             </label>
             <input
@@ -54,7 +54,12 @@
               min="{% now 'Y-m-d' %}"
               required
             >
-            <p class="form-hint">Wählen Sie das Datum, für das Sie das Gerät reservieren möchten.</p>
+            <p class="form-hint">
+              Wählen Sie das Datum, an dem Sie das Gerät voraussichtlich abholen möchten.
+              {% if device.status == 'ausgeliehen' %}
+                <strong>Achtung:</strong> Das Gerät ist derzeit ausgeliehen. Reservierungen sind nur für Tage möglich, an denen das Gerät verfügbar ist.
+              {% endif %}
+            </p>
           </div>
 
           <div class="form-actions">
@@ -89,10 +94,10 @@
             <dd>{{ device.hersteller }}</dd>
           </div>
           {% endif %}
-          {% if device.standort %}
+          {% if device.modell %}
           <div class="detail-row">
-            <dt>Standort</dt>
-            <dd>{{ device.standort }}</dd>
+            <dt>Modell</dt>
+            <dd>{{ device.modell }}</dd>
           </div>
           {% endif %}
         </dl>
@@ -103,9 +108,11 @@
       <div class="card-body">
         <h3 class="info-title">Hinweis zur Reservierung</h3>
         <ul class="info-list">
-          <li>Eine Reservierung sichert das Gerät für ein bestimmtes Datum.</li>
-          <li>Sie werden benachrichtigt, wenn das Gerät zur Abholung bereit ist.</li>
-          <li>Nicht abgeholte Reservierungen können storniert werden.</li>
+          <li>Wählen Sie Ihr voraussichtliches Abholdatum.</li>
+          <li>Reservierungen sind nur möglich, wenn das Gerät an diesem Datum verfügbar ist.</li>
+          <li>Sie erhalten eine Bestätigungs-E-Mail.</li>
+          <li>Nicht abgeholte Reservierungen verfallen automatisch nach 3 Tagen.</li>
+          <li>Abholen durch QR-Code-Scan am Gerät.</li>
         </ul>
       </div>
     </div>

@@ -1,6 +1,5 @@
 """
 Admin views for DHBW Gerätemanagement Frontend.
-Device management, user management, and audit logs (Admin only).
 """
 
 from django.shortcuts import render, redirect
@@ -12,16 +11,15 @@ from frontend.decorators import admin_required
 from frontend.services.api_client import get_client, APIError
 
 
-# Valid statuses for the device form
 DEVICE_STATUSES = [
     ('verfügbar', 'Verfügbar'),
     ('ausgeliehen', 'Ausgeliehen'),
     ('reserviert', 'Reserviert'),
     ('defekt', 'Defekt'),
     ('außer Betrieb', 'Außer Betrieb'),
+    ('zur Zeit nicht vorhanden', 'Zur Zeit nicht vorhanden'),
 ]
 
-# Valid roles for the user role form
 USER_ROLES = [
     ('Studierende_Mitarbeitende', 'Studierende / Mitarbeitende'),
     ('Administrator', 'Administrator'),
@@ -34,7 +32,6 @@ USER_ROLES = [
 
 @admin_required
 def admin_device_list_view(request):
-    """Admin device list with all devices and management options."""
     client = get_client(request)
     status_filter = request.GET.get('status', '')
     search_query = request.GET.get('q', '')
@@ -64,7 +61,6 @@ def admin_device_list_view(request):
 @admin_required
 @require_http_methods(['GET', 'POST'])
 def admin_device_create_view(request):
-    """Create a new device (Admin)."""
     client = get_client(request)
     context = {
         'current_user': request.current_user,
@@ -85,19 +81,13 @@ def admin_device_create_view(request):
 
         try:
             device = client.create_device(data)
-            # Bild-Upload (non-fatal)
             bild = request.FILES.get('bild')
             if bild:
                 try:
-                    bild_data = client.upload_device_image(
-                        bild.read(), bild.name, bild.content_type
-                    )
+                    bild_data = client.upload_device_image(bild.read(), bild.name, bild.content_type)
                     client.assign_device_image(device['id'], bild_data['id'])
                 except APIError as img_err:
-                    messages.warning(
-                        request,
-                        f'Gerät angelegt, aber Bild-Upload fehlgeschlagen: {img_err.detail}'
-                    )
+                    messages.warning(request, f'Gerät angelegt, aber Bild-Upload fehlgeschlagen: {img_err.detail}')
             messages.success(request, f'Gerät "{device.get("name")}" erfolgreich angelegt.')
             return redirect('/admin/geraete/')
         except APIError as e:
@@ -115,7 +105,6 @@ def admin_device_create_view(request):
 @admin_required
 @require_http_methods(['GET', 'POST'])
 def admin_device_edit_view(request, device_id: int):
-    """Edit an existing device (Admin). Only name, standort, status, bemerkungen are editable via PATCH."""
     client = get_client(request)
     context = {
         'current_user': request.current_user,
@@ -139,7 +128,6 @@ def admin_device_edit_view(request, device_id: int):
         pass
 
     if request.method == 'POST':
-        # PATCH-unterstützte Felder: name, box_id, status, bemerkungen
         patch_data = {}
         for field in ('name', 'status', 'bemerkungen'):
             val = request.POST.get(field, '').strip()
@@ -147,6 +135,7 @@ def admin_device_edit_view(request, device_id: int):
                 patch_data[field] = val
             elif field == 'bemerkungen':
                 patch_data[field] = request.POST.get(field, '')
+
         box_id_val = request.POST.get('box_id', '').strip()
         if box_id_val:
             try:
@@ -154,21 +143,18 @@ def admin_device_edit_view(request, device_id: int):
             except ValueError:
                 pass
 
+        # Langzeit-Ausleihe Checkbox: vorhanden = True, fehlend = False
+        patch_data['langzeit_ausleihe'] = request.POST.get('langzeit_ausleihe') == '1'
+
         try:
             updated = client.update_device(device_id, patch_data)
-            # Bild-Upload (non-fatal)
             bild = request.FILES.get('bild')
             if bild:
                 try:
-                    bild_data = client.upload_device_image(
-                        bild.read(), bild.name, bild.content_type
-                    )
+                    bild_data = client.upload_device_image(bild.read(), bild.name, bild.content_type)
                     client.assign_device_image(device_id, bild_data['id'])
                 except APIError as img_err:
-                    messages.warning(
-                        request,
-                        f'Gerät aktualisiert, aber Bild-Upload fehlgeschlagen: {img_err.detail}'
-                    )
+                    messages.warning(request, f'Gerät aktualisiert, aber Bild-Upload fehlgeschlagen: {img_err.detail}')
             messages.success(request, f'Gerät "{updated.get("name")}" erfolgreich aktualisiert.')
             return redirect('/admin/geraete/')
         except APIError as e:
@@ -184,9 +170,7 @@ def admin_device_edit_view(request, device_id: int):
 @admin_required
 @require_http_methods(['POST'])
 def admin_device_delete_view(request, device_id: int):
-    """Delete a device (Admin). POST-only."""
     client = get_client(request)
-
     try:
         client.delete_device(device_id)
         messages.success(request, 'Gerät erfolgreich gelöscht.')
@@ -197,12 +181,11 @@ def admin_device_delete_view(request, device_id: int):
             messages.error(request, 'Gerät kann nicht gelöscht werden, da es noch aktive Ausleihen hat.')
         else:
             messages.error(request, f'Gerät konnte nicht gelöscht werden: {e.detail}')
-
     return redirect('/admin/geraete/')
 
 
 def _extract_device_form_data(post_data) -> dict:
-    """Extract and clean device form data from POST."""
+    """Extrahiert und bereinigt Gerätedaten aus POST-Daten (für Create)."""
     data = {}
     fields = [
         'inventar_nummer', 'name', 'kategorie', 'hersteller',
@@ -213,12 +196,17 @@ def _extract_device_form_data(post_data) -> dict:
         val = post_data.get(field, '').strip()
         if val:
             data[field] = val
+
     box_id_val = post_data.get('box_id', '').strip()
     if box_id_val:
         try:
             data['box_id'] = int(box_id_val)
         except ValueError:
             pass
+
+    # Langzeit-Ausleihe Checkbox
+    data['langzeit_ausleihe'] = post_data.get('langzeit_ausleihe') == '1'
+
     return data
 
 
@@ -228,7 +216,6 @@ def _extract_device_form_data(post_data) -> dict:
 
 @admin_required
 def admin_user_list_view(request):
-    """Admin user list with role management options."""
     client = get_client(request)
     search_query = request.GET.get('q', '')
 
@@ -260,7 +247,6 @@ def admin_user_list_view(request):
 @admin_required
 @require_http_methods(['POST'])
 def admin_user_role_view(request, user_id: int):
-    """Update a user's role (Admin). POST-only."""
     client = get_client(request)
     rolle = request.POST.get('rolle', '').strip()
 
@@ -271,10 +257,7 @@ def admin_user_role_view(request, user_id: int):
     try:
         user = client.update_user_role(user_id, rolle)
         rolle_display = 'Administrator' if rolle == 'Administrator' else 'Studierende/Mitarbeitende'
-        messages.success(
-            request,
-            f'Rolle von "{user.get("name")}" erfolgreich auf "{rolle_display}" geändert.'
-        )
+        messages.success(request, f'Rolle von "{user.get("name")}" erfolgreich auf "{rolle_display}" geändert.')
     except APIError as e:
         if e.status_code == 404:
             messages.error(request, 'Benutzer nicht gefunden.')
@@ -287,10 +270,7 @@ def admin_user_role_view(request, user_id: int):
 @admin_required
 @require_http_methods(['POST'])
 def admin_user_delete_view(request, user_id: int):
-    """Delete a user (Admin). POST-only."""
     client = get_client(request)
-
-    # Prevent self-deletion
     current_user = request.current_user
     if current_user and str(current_user.get('id')) == str(user_id):
         messages.error(request, 'Sie können Ihr eigenes Konto nicht löschen.')
@@ -314,7 +294,6 @@ def admin_user_delete_view(request, user_id: int):
 
 @admin_required
 def admin_audit_logs_view(request):
-    """Global audit log listing (Admin)."""
     client = get_client(request)
     try:
         page = max(1, int(request.GET.get('page', 1)))
@@ -345,9 +324,7 @@ def admin_audit_logs_view(request):
 
 @admin_required
 def admin_device_audit_logs_view(request, device_id: int):
-    """Audit logs for a specific device (Admin)."""
     client = get_client(request)
-
     context = {
         'current_user': request.current_user,
         'logs': [],
@@ -376,7 +353,6 @@ def admin_device_audit_logs_view(request, device_id: int):
 
 @admin_required
 def admin_loan_list_view(request):
-    """Admin-Übersicht aller Ausleihen mit Rückgabe-Funktion."""
     client = get_client(request)
     status_filter = request.GET.get('status', '')
     show_overdue = request.GET.get('ueberfaellig') == '1'
@@ -426,7 +402,6 @@ def admin_loan_list_view(request):
 @admin_required
 @require_http_methods(['GET', 'POST'])
 def admin_export_view(request):
-    """CSV-Export für Ausleihen."""
     client = get_client(request)
 
     if request.method == 'POST':
@@ -453,7 +428,6 @@ def admin_export_view(request):
 
 @admin_required
 def admin_statistik_view(request):
-    """Statistik-Dashboard für Admins."""
     client = get_client(request)
     context = {
         'current_user': request.current_user,

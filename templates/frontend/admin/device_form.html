@@ -40,20 +40,13 @@
           {% csrf_token %}
 
           {% if form_mode == 'create' %}
-          {# These fields are only settable on creation; PATCH only supports name/box_id/status/bemerkungen #}
           <div class="form-group">
             <label for="inventar_nummer" class="form-label">
               Inventarnummer <span class="form-label-required">*</span>
             </label>
-            <input
-              type="text"
-              id="inventar_nummer"
-              name="inventar_nummer"
-              class="form-control"
+            <input type="text" id="inventar_nummer" name="inventar_nummer" class="form-control"
               placeholder="z.B. INV-2024-001"
-              value="{{ form_data.inventar_nummer|default:'' }}"
-              required
-            >
+              value="{{ form_data.inventar_nummer|default:'' }}" required>
           </div>
           {% else %}
           <div class="form-group">
@@ -64,83 +57,48 @@
           {% endif %}
 
           <div class="form-group">
-            <label for="name" class="form-label">
-              Name <span class="form-label-required">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              class="form-control"
+            <label for="name" class="form-label">Name <span class="form-label-required">*</span></label>
+            <input type="text" id="name" name="name" class="form-control"
               placeholder="z.B. MacBook Pro 14"
               value="{% if form_data %}{{ form_data.name }}{% elif device %}{{ device.name }}{% endif %}"
-              required
-            >
+              required>
           </div>
 
           {% if form_mode == 'create' %}
           <div class="form-row">
             <div class="form-group">
               <label for="kategorie" class="form-label">Kategorie</label>
-              <input
-                type="text"
-                id="kategorie"
-                name="kategorie"
-                class="form-control"
+              <input type="text" id="kategorie" name="kategorie" class="form-control"
                 placeholder="z.B. Laptop, Kamera, …"
-                value="{{ form_data.kategorie|default:'' }}"
-              >
+                value="{{ form_data.kategorie|default:'' }}">
             </div>
             <div class="form-group">
               <label for="hersteller" class="form-label">Hersteller</label>
-              <input
-                type="text"
-                id="hersteller"
-                name="hersteller"
-                class="form-control"
+              <input type="text" id="hersteller" name="hersteller" class="form-control"
                 placeholder="z.B. Apple, Lenovo, …"
-                value="{{ form_data.hersteller|default:'' }}"
-              >
+                value="{{ form_data.hersteller|default:'' }}">
             </div>
           </div>
-
           <div class="form-row">
             <div class="form-group">
               <label for="modell" class="form-label">Modell</label>
-              <input
-                type="text"
-                id="modell"
-                name="modell"
-                class="form-control"
+              <input type="text" id="modell" name="modell" class="form-control"
                 placeholder="z.B. MBP 14 M3 Pro"
-                value="{{ form_data.modell|default:'' }}"
-              >
+                value="{{ form_data.modell|default:'' }}">
             </div>
             <div class="form-group">
               <label for="seriennummer" class="form-label">Seriennummer</label>
-              <input
-                type="text"
-                id="seriennummer"
-                name="seriennummer"
-                class="form-control"
+              <input type="text" id="seriennummer" name="seriennummer" class="form-control"
                 placeholder="Seriennummer des Geräts"
-                value="{{ form_data.seriennummer|default:'' }}"
-              >
+                value="{{ form_data.seriennummer|default:'' }}">
             </div>
           </div>
-
           <div class="form-group">
             <label for="anschaffungsdatum" class="form-label">Anschaffungsdatum</label>
-            <input
-              type="date"
-              id="anschaffungsdatum"
-              name="anschaffungsdatum"
-              class="form-control"
-              value="{{ form_data.anschaffungsdatum|default:'' }}"
-            >
+            <input type="date" id="anschaffungsdatum" name="anschaffungsdatum" class="form-control"
+              value="{{ form_data.anschaffungsdatum|default:'' }}">
           </div>
           {% else %}
-          {# Edit mode: show read-only fields that can't be PATCHed #}
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Kategorie</label>
@@ -161,10 +119,7 @@
               <div class="form-control form-control--readonly">{{ device.seriennummer|default:"–" }}</div>
             </div>
           </div>
-          <p class="form-hint">
-            Kategorie, Hersteller, Modell und Seriennummer können nach dem Anlegen nicht mehr geändert werden
-            (API-Einschränkung: PATCH unterstützt nur name, standort, status, bemerkungen).
-          </p>
+          <p class="form-hint">Kategorie, Hersteller, Modell und Seriennummer können nach dem Anlegen nicht mehr geändert werden.</p>
           {% endif %}
 
           <div class="form-group">
@@ -183,9 +138,7 @@
           </div>
 
           <div class="form-group">
-            <label for="status" class="form-label">
-              Status <span class="form-label-required">*</span>
-            </label>
+            <label for="status" class="form-label">Status <span class="form-label-required">*</span></label>
             <select id="status" name="status" class="form-control" required>
               {% for val, label in statuses %}
                 <option value="{{ val }}"
@@ -199,32 +152,48 @@
 
           <div class="form-group">
             <label for="bemerkungen" class="form-label">Bemerkungen</label>
-            <textarea
-              id="bemerkungen"
-              name="bemerkungen"
-              class="form-control form-control--textarea"
-              placeholder="Optionale Hinweise zum Gerät…"
-              rows="3"
+            <textarea id="bemerkungen" name="bemerkungen" class="form-control form-control--textarea"
+              placeholder="Optionale Hinweise zum Gerät…" rows="3"
             >{% if form_data %}{{ form_data.bemerkungen }}{% elif device %}{{ device.bemerkungen }}{% endif %}</textarea>
+          </div>
+
+          {# ── Langzeit-Ausleihe Flag ── #}
+          <div class="form-group">
+            <div style="display:flex;align-items:flex-start;gap:.75rem;padding:1rem;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)">
+              <input
+                type="checkbox"
+                id="langzeit_ausleihe"
+                name="langzeit_ausleihe"
+                value="1"
+                style="width:18px;height:18px;margin-top:2px;flex-shrink:0;cursor:pointer;accent-color:var(--primary)"
+                {% if form_data.langzeit_ausleihe == '1' %}checked
+                {% elif not form_data and device.langzeit_ausleihe %}checked
+                {% endif %}
+              >
+              <div>
+                <label for="langzeit_ausleihe" class="form-label" style="cursor:pointer;margin-bottom:.25rem">
+                  Langzeit-Ausleihe erlauben
+                </label>
+                <p class="form-hint" style="margin:0">
+                  Wenn aktiviert, können Nutzer dieses Gerät einmalig um <strong>80 Tage</strong> verlängern
+                  (zusätzlich zur normalen 14-Tage-Verlängerung). Ermöglicht eine Gesamtausleihdauer von bis zu ca. 3 Monaten.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">
             <label class="form-label">Gerätebild</label>
             <div class="image-upload-zone" id="imageUploadZone">
-              <input
-                type="file"
-                id="bildInput"
-                name="bild"
-                class="image-upload-input"
-                accept="image/jpeg,image/png,image/webp"
-              >
+              <input type="file" id="bildInput" name="bild" class="image-upload-input"
+                accept="image/jpeg,image/png,image/webp">
               <div class="image-upload-placeholder" id="uploadPlaceholder">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
                 <p>Bild hier ablegen oder klicken</p>
-                <span>JPEG, PNG, WebP</span>
+                <span>JPEG, PNG, WebP · Max. 5 MB</span>
               </div>
               <div class="image-preview-wrap" id="previewWrap">
                 <img src="" alt="Vorschau" class="image-preview" id="imagePreview">
@@ -260,10 +229,25 @@
         <form method="post" action="/admin/geraete/{{ device.id }}/loeschen/">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger btn-full"
-            onclick="return confirm('Gerät \"{{ device.name }}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')">
+            onclick="return confirm('Gerät \"{{ device.name }}\" wirklich löschen?')">
             Gerät löschen
           </button>
         </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if form_mode == 'edit' and device.langzeit_ausleihe %}
+    <div class="card" style="border-color:var(--primary)">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" width="16" height="16">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <strong style="color:var(--primary);font-size:.875rem">Langzeit-Ausleihe aktiv</strong>
+        </div>
+        <p style="font-size:.8rem;color:var(--muted)">Nutzer können dieses Gerät einmalig um 80 Tage verlängern.</p>
       </div>
     </div>
     {% endif %}
@@ -272,15 +256,15 @@
       <div class="card-body">
         <h3 class="info-title">Hinweis</h3>
         {% if form_mode == 'edit' %}
-        <p class="text-muted" style="font-size:0.875rem">
-          Über die API können nach dem Anlegen nur <strong>Name, Box/Standort, Status</strong> und
-          <strong>Bemerkungen</strong> geändert werden (PATCH /api/v1/geraete/{id}).
+        <p class="text-muted" style="font-size:.875rem">
+          Nach dem Anlegen können nur <strong>Name, Box/Standort, Status, Bemerkungen</strong> und
+          das <strong>Langzeit-Flag</strong> geändert werden.
         </p>
         {% else %}
         <ul class="info-list">
-          <li>Die Inventarnummer muss eindeutig sein.</li>
+          <li>Inventarnummer muss eindeutig sein.</li>
           <li>Pflichtfelder sind mit * markiert.</li>
-          <li>Der Status kann später jederzeit geändert werden.</li>
+          <li>Langzeit-Ausleihe kann jederzeit aktiviert/deaktiviert werden.</li>
         </ul>
         {% endif %}
       </div>
@@ -298,51 +282,27 @@
   var previewWrap = document.getElementById('previewWrap');
   var preview = document.getElementById('imagePreview');
   var removeBtn = document.getElementById('removeImage');
-
   if (!zone) return;
 
-  zone.addEventListener('click', function (e) {
-    if (e.target !== removeBtn) input.click();
-  });
-
-  zone.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    zone.classList.add('drag-over');
-  });
-  zone.addEventListener('dragleave', function () {
-    zone.classList.remove('drag-over');
-  });
+  zone.addEventListener('click', function (e) { if (e.target !== removeBtn) input.click(); });
+  zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', function () { zone.classList.remove('drag-over'); });
   zone.addEventListener('drop', function (e) {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    if (e.dataTransfer.files.length) {
-      input.files = e.dataTransfer.files;
-      showPreview(e.dataTransfer.files[0]);
-    }
+    e.preventDefault(); zone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; showPreview(e.dataTransfer.files[0]); }
   });
-
-  input.addEventListener('change', function () {
-    if (input.files.length) showPreview(input.files[0]);
-  });
-
+  input.addEventListener('change', function () { if (input.files.length) showPreview(input.files[0]); });
   removeBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    input.value = '';
-    preview.src = '';
-    previewWrap.classList.remove('visible');
-    placeholder.style.display = '';
+    e.stopPropagation(); input.value = ''; preview.src = '';
+    previewWrap.classList.remove('visible'); placeholder.style.display = '';
   });
-
   function showPreview(file) {
     var reader = new FileReader();
     reader.onload = function (ev) {
-      preview.src = ev.target.result;
-      placeholder.style.display = 'none';
-      previewWrap.classList.add('visible');
+      preview.src = ev.target.result; placeholder.style.display = 'none'; previewWrap.classList.add('visible');
     };
     reader.readAsDataURL(file);
   }
 })();
 </script>
 {% endblock %}
-

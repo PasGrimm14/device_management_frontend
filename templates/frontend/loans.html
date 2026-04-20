@@ -35,6 +35,9 @@
         <div class="list-item-body">
           <div class="list-item-title">
             {% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}
+            {% if loan.geraet.langzeit_ausleihe and not loan.langzeit_verlaengerung_genutzt and loan.status in 'aktiv,überfällig' %}
+              <span class="badge badge-warn" style="font-size:.7rem;margin-left:.4rem">+80T verfügbar</span>
+            {% endif %}
           </div>
           <div class="list-item-meta">
             <span>Seit {{ loan.startdatum|format_date }}</span>
@@ -49,11 +52,10 @@
           <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
 
           {% if loan.status == 'aktiv' or loan.status == 'überfällig' %}
-            {% if loan|can_extend %}
+            {% if loan|can_extend or loan|can_extend_langzeit %}
               <a href="/ausleihen/{{ loan.id }}/verlaengern/" class="btn btn-ghost btn-sm">Verlängern</a>
             {% endif %}
 
-            {# Rückgabe nur für Admins #}
             {% if current_user.rolle == 'Administrator' %}
             <form method="post" action="/ausleihen/{{ loan.id }}/rueckgabe/" style="display:inline">
               {% csrf_token %}

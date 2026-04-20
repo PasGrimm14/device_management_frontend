@@ -15,7 +15,7 @@
       <span>Verlängern</span>
     </div>
     <h1 class="page-hero-title">Ausleihe verlängern</h1>
-    <p class="page-hero-sub">Verlängerung um 14 Tage beantragen</p>
+    <p class="page-hero-sub">Verlängerungsoption wählen</p>
   </div>
 </div>
 
@@ -25,69 +25,128 @@
 {% elif loan %}
 <div class="form-layout">
   <div class="form-main">
-    <div class="card">
+
+    {# ── Aktuelle Ausleihdaten ── #}
+    <div class="card" style="margin-bottom:1.25rem">
       <div class="card-header">
-        <h2 class="card-title">Verlängerung bestätigen</h2>
+        <h2 class="card-title">Aktuelle Ausleihe</h2>
+        {{ loan.status|ausleihe_status_badge }}
       </div>
       <div class="card-body">
-        <p class="confirm-text">
-          Möchten Sie die Ausleihe von
-          <strong>{% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}</strong>
-          um <strong>14 Tage</strong> verlängern?
-        </p>
-
-        <dl class="detail-list" style="margin: 1.5rem 0">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>Gerät</dt>
+            <dd>{% if loan.geraet %}{{ loan.geraet.name }}{% else %}Gerät #{{ loan.geraet_id }}{% endif %}</dd>
+          </div>
           <div class="detail-row">
             <dt>Aktuelles Rückgabedatum</dt>
-            <dd>{{ loan.geplantes_rueckgabedatum|format_date|default:"nicht angegeben" }}</dd>
+            <dd><strong>{{ loan.geplantes_rueckgabedatum|format_date|default:"nicht angegeben" }}</strong></dd>
           </div>
           <div class="detail-row">
             <dt>Bisherige Verlängerungen</dt>
             <dd>{{ loan.verlaengerungen_anzahl }} von 2</dd>
           </div>
+          {% if loan.langzeit_verlaengerung_genutzt %}
           <div class="detail-row">
-            <dt>Verbleibende Verlängerungen</dt>
-            <dd>
-              {% if loan.verlaengerungen_anzahl == 0 %}2
-              {% elif loan.verlaengerungen_anzahl == 1 %}1
-              {% else %}0
-              {% endif %} noch möglich
-          </dd>
+            <dt>Langzeit-Verlängerung</dt>
+            <dd><span class="badge badge-neutral">Bereits genutzt</span></dd>
           </div>
+          {% endif %}
         </dl>
-
-        {% if not loan|can_extend %}
-          <div class="alert alert--warning">
-            Die maximale Anzahl an Verlängerungen (2) wurde bereits erreicht.
-          </div>
-        {% else %}
-          <form method="post" action="/ausleihen/{{ loan.id }}/verlaengern/">
-            {% csrf_token %}
-            <div class="form-actions">
-              <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost">Abbrechen</a>
-              <button type="submit" class="btn btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                  <polyline points="23 4 23 10 17 10"/>
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                </svg>
-                Verlängerung bestätigen
-              </button>
-            </div>
-          </form>
-        {% endif %}
       </div>
     </div>
+
+    {# ── Keine Verlängerung mehr möglich ── #}
+    {% if not loan|can_extend and not loan|can_extend_langzeit %}
+      <div class="alert alert--warning">
+        Die maximale Anzahl an Verlängerungen wurde bereits erreicht und es sind keine weiteren Optionen verfügbar.
+      </div>
+      <div style="margin-top:1rem">
+        <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost">← Zurück zur Ausleihe</a>
+      </div>
+
+    {% else %}
+
+      {# ── Standard-Verlängerung (14 Tage) ── #}
+      {% if loan|can_extend %}
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">
+          <h2 class="card-title">Standard-Verlängerung</h2>
+          <span class="badge badge-ok">+14 Tage</span>
+        </div>
+        <div class="card-body">
+          <p style="margin-bottom:1rem;font-size:.9rem;color:var(--muted)">
+            Verlängert das Rückgabedatum um <strong>14 Tage</strong>.
+            {% if loan.verlaengerungen_anzahl == 1 %}
+              Dies ist Ihre letzte Standard-Verlängerung.
+            {% else %}
+              Sie haben danach noch {{ 2|add:"-1"|add:loan.verlaengerungen_anzahl|add:"-1" }} Standard-Verlängerung(en) übrig.
+            {% endif %}
+          </p>
+          <form method="post" action="/ausleihen/{{ loan.id }}/verlaengern/">
+            {% csrf_token %}
+            <input type="hidden" name="langzeit" value="0">
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Jetzt um 14 Tage verlängern
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Langzeit-Verlängerung (80 Tage) ── #}
+      {% if loan|can_extend_langzeit %}
+      <div class="card" style="border-color:var(--primary)">
+        <div class="card-header" style="background:#fdf0f1">
+          <h2 class="card-title" style="color:var(--primary)">Langzeit-Verlängerung</h2>
+          <span class="badge badge-warn">+80 Tage</span>
+        </div>
+        <div class="card-body">
+          <p style="margin-bottom:1rem;font-size:.9rem;color:var(--muted)">
+            Für dieses Gerät ist eine <strong>Langzeit-Verlängerung um 80 Tage</strong> freigeschaltet.
+            Diese Option kann nur einmal genutzt werden und ermöglicht eine Gesamtausleihdauer von bis zu ca. 3 Monaten.
+          </p>
+          <div class="alert alert--warning" style="margin-bottom:1rem">
+            <span>⚠ Diese Verlängerung kann nicht rückgängig gemacht werden und ist nur einmal verfügbar.</span>
+          </div>
+          <form method="post" action="/ausleihen/{{ loan.id }}/verlaengern/">
+            {% csrf_token %}
+            <input type="hidden" name="langzeit" value="1">
+            <button type="submit" class="btn btn-primary"
+              onclick="return confirm('Langzeit-Verlängerung um 80 Tage wirklich nutzen? Diese Option steht danach nicht mehr zur Verfügung.')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Langzeit-Verlängerung nutzen (+80 Tage)
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+    {% endif %}
   </div>
 
   <div class="form-sidebar">
     <div class="card card--info">
       <div class="card-body">
-        <h3 class="info-title">Hinweis</h3>
+        <h3 class="info-title">Verlängerungsregeln</h3>
         <ul class="info-list">
-          <li>Jede Verlängerung fügt 14 Tage zum geplanten Rückgabedatum hinzu.</li>
-          <li>Maximal 2 Verlängerungen pro Ausleihe möglich.</li>
-          <li>Bei längerfristigem Bedarf bitte erneut ausleihen.</li>
+          <li><strong>Standard:</strong> 14 Tage, max. 2× pro Ausleihe.</li>
+          <li><strong>Langzeit:</strong> 80 Tage, nur 1× verfügbar (wenn vom Admin freigeschaltet).</li>
+          <li>Verlängerung nicht möglich, wenn ein anderer Nutzer das Gerät reserviert hat.</li>
+          <li>Maximale Gesamtdauer bei Langzeit: ca. 3 Monate.</li>
         </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <a href="/ausleihen/{{ loan.id }}/" class="btn btn-ghost btn-full">← Zurück zur Ausleihe</a>
       </div>
     </div>
   </div>

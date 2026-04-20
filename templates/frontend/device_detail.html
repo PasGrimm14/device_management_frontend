@@ -26,22 +26,28 @@
           {% if device.kategorie %} · {{ device.kategorie }}{% endif %}
         </p>
       </div>
-      {{ device.status|geraet_status_badge }}
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        {{ device.status|geraet_status_badge }}
+        {% if device.langzeit_ausleihe %}
+          <span class="badge badge-warn" title="Langzeit-Ausleihe freigeschaltet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-right:.2rem">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Langzeit
+          </span>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
 
 <div class="detail-layout">
-  {# Main info #}
   <div class="detail-main">
     {% if device.bild_id %}
     <div class="card" style="margin-bottom:1.25rem">
       <div class="card-body" style="padding:.75rem;text-align:center">
-        <img
-          src="/geraete/{{ device.id }}/bild/"
-          alt="Bild von {{ device.name }}"
-          style="max-width:100%;max-height:320px;object-fit:contain;border-radius:6px"
-        >
+        <img src="/geraete/{{ device.id }}/bild/" alt="Bild von {{ device.name }}"
+          style="max-width:100%;max-height:320px;object-fit:contain;border-radius:6px">
       </div>
     </div>
     {% endif %}
@@ -105,6 +111,12 @@
             <dt>Status</dt>
             <dd>{{ device.status|geraet_status_badge }}</dd>
           </div>
+          {% if device.langzeit_ausleihe %}
+          <div class="detail-row">
+            <dt>Langzeit-Ausleihe</dt>
+            <dd><span class="badge badge-warn">Freigeschaltet (+80 Tage)</span></dd>
+          </div>
+          {% endif %}
           {% if device.anschaffungsdatum %}
           <div class="detail-row">
             <dt>Anschaffungsdatum</dt>
@@ -121,7 +133,7 @@
       </div>
     </div>
 
-    {# Aktive Ausleihe-Info (nur zur Anzeige, keine Aktions-Buttons für normalen User) #}
+    {# Aktive Ausleihe-Info #}
     {% if geraet_ausleihe and not active_loan %}
     <div class="card card--warn">
       <div class="card-header">
@@ -141,7 +153,7 @@
     </div>
     {% endif %}
 
-    {# Eigene aktive Ausleihe: nur Verlängern, kein Zurückgeben für User #}
+    {# Eigene aktive Ausleihe #}
     {% if active_loan %}
     <div class="card card--warn">
       <div class="card-header">
@@ -167,10 +179,9 @@
         </dl>
         <div class="action-row">
           <a href="/ausleihen/{{ active_loan.id }}/" class="btn btn-ghost btn-sm">Details</a>
-          {% if active_loan|can_extend %}
+          {% if active_loan|can_extend or active_loan|can_extend_langzeit %}
             <a href="/ausleihen/{{ active_loan.id }}/verlaengern/" class="btn btn-primary btn-sm">Verlängern</a>
           {% endif %}
-          {# Rückgabe nur durch Admin – kein Button für normale User #}
           {% if current_user.rolle == 'Administrator' %}
           <form method="post" action="/ausleihen/{{ active_loan.id }}/rueckgabe/" style="display:inline">
             {% csrf_token %}
@@ -195,18 +206,11 @@
       <div class="card-body action-stack">
 
         {% if current_user.rolle == 'Administrator' %}
-          {# Admin sieht alle Aktionen #}
           {% if device.status == 'verfügbar' %}
             <div class="status-note status-note--neutral" style="font-size:.85rem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display:inline;vertical-align:middle;margin-right:.3rem">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
               Ausleihe via QR-Code-Scan am Gerät starten
             </div>
-            <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">
-              Reservieren
-            </a>
+            <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">Reservieren</a>
           {% elif device.status == 'ausgeliehen' %}
             <div class="status-note status-note--warn">Derzeit ausgeliehen.</div>
             <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">Für später reservieren</a>
@@ -216,15 +220,12 @@
             <div class="status-note status-note--danger">Als defekt gemeldet.</div>
           {% elif device.status == 'außer Betrieb' %}
             <div class="status-note status-note--danger">Außer Betrieb.</div>
+          {% elif device.status == 'zur Zeit nicht vorhanden' %}
+            <div class="status-note status-note--neutral">Zur Zeit nicht vorhanden.</div>
           {% endif %}
           <hr class="divider">
-          <a href="/admin/geraete/{{ device.id }}/bearbeiten/" class="btn btn-ghost btn-full">
-            Gerät bearbeiten
-          </a>
-          <a href="/admin/audit-logs/geraet/{{ device.id }}/" class="btn btn-ghost btn-full">
-            Audit-Log anzeigen
-          </a>
-          {# QR-Code-Download nur für Admins #}
+          <a href="/admin/geraete/{{ device.id }}/bearbeiten/" class="btn btn-ghost btn-full">Gerät bearbeiten</a>
+          <a href="/admin/audit-logs/geraet/{{ device.id }}/" class="btn btn-ghost btn-full">Audit-Log anzeigen</a>
           <a href="/geraete/{{ device.id }}/qr-code/" class="btn btn-ghost btn-full">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
               <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -234,10 +235,10 @@
           </a>
 
         {% else %}
-          {# Normaler User: Ausleihe NUR via QR-Code, kein Button #}
           {% if device.status == 'verfügbar' %}
             <div class="status-note status-note--neutral" style="text-align:center;padding:1rem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="display:block;margin:0 auto .5rem;color:var(--muted)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"
+                style="display:block;margin:0 auto .5rem;color:var(--muted)">
                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
                 <rect x="3" y="14" width="7" height="7"/>
                 <path d="M14 14h1v1h-1zM17 14h1v1h-1zM14 17h1M17 17h1v1h-1zM14 20h1v1h-1zM17 20h3"/>
@@ -254,22 +255,21 @@
             </a>
           {% elif device.status == 'ausgeliehen' %}
             <div class="status-note status-note--warn">Derzeit ausgeliehen.</div>
-            <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">
-              Für später reservieren
-            </a>
+            <a href="/reservierungen/neu/{{ device.id }}/" class="btn btn-ghost btn-full">Für später reservieren</a>
           {% elif device.status == 'reserviert' %}
             <div class="status-note status-note--neutral" style="text-align:center;padding:1rem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="display:block;margin:0 auto .5rem;color:var(--muted)">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
               <strong>Reserviert</strong><br>
               <span style="font-size:.8rem">Scannen Sie den QR-Code am Gerät, um die Ausleihe zu starten.</span>
             </div>
           {% elif device.status == 'defekt' %}
-            <div class="status-note status-note--danger">Als defekt gemeldet.</div>
+            <div class="status-note status-note--danger">Als defekt gemeldet – nicht ausleihbar.</div>
           {% elif device.status == 'außer Betrieb' %}
-            <div class="status-note status-note--danger">Außer Betrieb.</div>
+            <div class="status-note status-note--danger">Außer Betrieb – nicht ausleihbar.</div>
+          {% elif device.status == 'zur Zeit nicht vorhanden' %}
+            <div class="status-note status-note--neutral">
+              <strong>Zur Zeit nicht vorhanden.</strong><br>
+              <span style="font-size:.85rem">Dieses Gerät ist momentan nicht verfügbar. Bitte erkundigen Sie sich beim Sekretariat.</span>
+            </div>
           {% endif %}
         {% endif %}
 
