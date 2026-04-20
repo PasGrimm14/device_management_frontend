@@ -5,7 +5,7 @@
     <a href="/" class="topbar-brand">
       <img src="{{ LOGO_URL }}" alt="DHBW Logo" style="height:36px;width:auto;display:block;">
       <div class="topbar-title">
-        <span class="topbar-title-main">Gerätemanagement</span>
+        <span class="topbar-title-main">Geräteverwaltung</span>
         <span class="topbar-title-sub">DHBW Heilbronn</span>
       </div>
     </a>
@@ -16,11 +16,11 @@
         <a href="/geraete/" class="topbar-nav-link {% if '/geraete/' in request.path %}active{% endif %}">Geräte</a>
         <a href="/ausleihen/" class="topbar-nav-link {% if '/ausleihen/' in request.path %}active{% endif %}">Ausleihen</a>
         <a href="/reservierungen/" class="topbar-nav-link {% if '/reservierungen/' in request.path %}active{% endif %}">Reservierungen</a>
+        <a href="{{ SYNC_URL }}" class="topbar-nav-link" target="_self">← NSYNC-DHBW</a>
       </nav>
 
       <div class="topbar-user">
 
-        {# ── Role indicator + switch (only for real Admins) ── #}
         {% if request.real_role == 'Administrator' %}
           <div class="role-switcher">
             <span class="role-badge {% if request.active_role == 'Administrator' %}role-badge--admin{% else %}role-badge--user{% endif %}">
