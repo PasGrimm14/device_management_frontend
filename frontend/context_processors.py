@@ -6,4 +6,5 @@ def api_base_url(request):
     return {
         'API_BASE_URL': settings.API_BASE_URL,
         'API_PUBLIC_URL': settings.API_PUBLIC_URL,
+        'LOGO_URL': settings.LOGO_URL,
     }
