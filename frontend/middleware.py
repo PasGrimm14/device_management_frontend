@@ -2,6 +2,17 @@
 JWT Auth Middleware for DHBW Gerätemanagement Frontend.
 Reads JWT token and user info from session, injects into request.
 """
+from django.conf import settings
+from django.shortcuts import redirect
+
+
+# Pfade die keinen Login benötigen
+_EXEMPT_PATHS = (
+    '/sso/callback/',
+    '/login/',
+    '/logout/',
+    '/static/',
+)
 
 
 class JWTAuthMiddleware:
@@ -33,22 +44,28 @@ class JWTAuthMiddleware:
         if user and user.get('rolle') == 'Administrator':
             active_role = request.session.get('active_role', 'Administrator')
         else:
-            # Non-admins always use their real role; clear any stale active_role
             active_role = user.get('rolle') if user else None
             if 'active_role' in request.session:
                 del request.session['active_role']
 
         request.active_role = active_role
 
-        # Expose a modified copy of the user dict so templates can use
-        # request.current_user.rolle to get the *active* role naturally.
-        # The real role is still accessible via request.real_role.
         if user:
             current_user = dict(user)
             current_user['rolle'] = active_role
             request.current_user = current_user
         else:
             request.current_user = None
+
+        # Kein Token → zurück zu N'SYNC für automatischen SSO-Login
+        if not request.api_token:
+            exempt = any(request.path.startswith(p) for p in _EXEMPT_PATHS)
+            if not exempt:
+                sync_url = getattr(settings, 'SYNC_URL', None)
+                if sync_url:
+                    return redirect(f"{sync_url.rstrip('/')}/accounts/sso/redirect/")
+                # Fallback: lokale Login-Maske
+                return redirect(f"/login/?next={request.path}")
 
         response = self.get_response(request)
         return response
