@@ -114,17 +114,18 @@
     </div>
   </div>
 
-  <div class="stat-card stat-card--neutral">
-    <div class="stat-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
-        <line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-    </div>
-    <div class="stat-body">
-      <span class="stat-value">{{ stats.verfuegbar }}</span>
-      <span class="stat-label">Verfügbare Geräte</span>
-    </div>
+  <div class="stat-card {% if stats.defekt > 0 %}stat-card--danger{% else %}stat-card--neutral{% endif %}">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats.defekt }}</span>
+        <span class="stat-label">Defekte Geräte</span>
+      </div>
   </div>
 </section>
 {% endif %}
