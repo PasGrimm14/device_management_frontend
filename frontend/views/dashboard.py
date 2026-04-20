@@ -59,6 +59,9 @@ def dashboard_view(request):
     # ── Eigene Ausleihen ─────────────────────────────────────────────────────
     try:
         loans = client.get_loans(limit=200)
+        current_user_id = request.current_user.get('id') if request.current_user else None
+        if is_admin:
+            loans = [l for l in loans if l.get('nutzer_id') == current_user_id]
         active = [l for l in loans if l.get('status') in ('aktiv', 'überfällig')]
         overdue = [l for l in loans if l.get('status') == 'überfällig']
         context['active_loans'] = active[:5]
@@ -70,6 +73,9 @@ def dashboard_view(request):
     # ── Eigene Reservierungen ────────────────────────────────────────────────
     try:
         reservations = client.get_reservations(limit=200)
+        current_user_id = request.current_user.get('id') if request.current_user else None
+        if is_admin:
+            reservations = [r for r in reservations if r.get('nutzer_id') == current_user_id]
         aktive_res = [r for r in reservations if r.get('status') == 'aktiv']
         context['my_stats']['meine_reservierungen'] = len(aktive_res)
     except APIError:
