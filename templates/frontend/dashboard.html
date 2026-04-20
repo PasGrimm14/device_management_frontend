@@ -101,7 +101,7 @@
     </div>
   </div>
 
-  <div class="stat-card {% if admin_stats.gesamt_ueberfaellig > 0 %}stat-card--danger{% else %}stat-card--neutral{% endif %}">
+  <div class="stat-card {% if admin_stats.gesamt_ueberfaellig > 0 %}stat-card--warn{% else %}stat-card--neutral{% endif %}">
     <div class="stat-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
@@ -114,7 +114,7 @@
     </div>
   </div>
 
-  <div class="stat-card {% if stats.defekt > 0 %}stat-card--danger{% else %}stat-card--neutral{% endif %}">
+  <div class="stat-card stat-card--danger">
       <div class="stat-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
