@@ -1,12 +1,15 @@
 """URL configuration for the frontend app."""
 
 from django.urls import path
-from frontend.views import auth, dashboard, devices, loans, reservations, profile, admin_views, standort_views
+from frontend.views import auth, dashboard, devices, loans, reservations, profile, admin_views, standort_views, sso
 
 urlpatterns = [
     # Auth
     path('login/', auth.login_view, name='login'),
     path('logout/', auth.logout_view, name='logout'),
+
+    # SSO
+    path('sso/callback/', sso.sso_callback_view, name='sso_callback'),
 
     # Dashboard
     path('', dashboard.dashboard_view, name='dashboard'),

@@ -92,3 +92,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
+
+SYNC_URL = os.environ.get('SYNC_URL', 'http://localhost:8000')
