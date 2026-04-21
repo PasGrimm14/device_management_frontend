@@ -5,6 +5,7 @@
 {% block title %}
   {% if form_type == 'einrichtung' %}Bildungseinrichtung anlegen
   {% elif form_type == 'standort' %}Standort anlegen
+  {% elif form_type == 'box_move' %}Box umziehen
   {% else %}Box anlegen
   {% endif %} – DHBW Gerätemanagement
 {% endblock %}
@@ -18,6 +19,7 @@
       <span>
         {% if form_type == 'einrichtung' %}Bildungseinrichtung anlegen
         {% elif form_type == 'standort' %}Standort anlegen
+        {% elif form_type == 'box_move' %}Box umziehen
         {% else %}Box anlegen
         {% endif %}
       </span>
@@ -25,6 +27,7 @@
     <h1 class="page-hero-title">
       {% if form_type == 'einrichtung' %}Neue Bildungseinrichtung
       {% elif form_type == 'standort' %}Neuen Standort anlegen
+      {% elif form_type == 'box_move' %}Box umziehen: {{ box.box_nummer }}
       {% else %}Neue Box anlegen
       {% endif %}
     </h1>
@@ -134,7 +137,96 @@
           </div>
         </form>
 
-        {# ---- Box ---- #}
+        {# ---- Box umziehen ---- #}
+        {% elif form_type == 'box_move' %}
+        {% if box %}
+        <div class="detail-list" style="margin-bottom:1.5rem">
+          <div class="detail-row">
+            <dt>Box-Nummer</dt>
+            <dd><strong>{{ box.box_nummer|default:"–" }}</strong></dd>
+          </div>
+          {% if box.beschreibung %}
+          <div class="detail-row">
+            <dt>Beschreibung</dt>
+            <dd>{{ box.beschreibung }}</dd>
+          </div>
+          {% endif %}
+          <div class="detail-row">
+            <dt>Aktueller Standort</dt>
+            <dd>
+              {% if box.standort %}
+                {% if box.standort.bildungseinrichtung.name %}{{ box.standort.bildungseinrichtung.name }} – {% endif %}
+                {{ box.standort.gebaeude|default:"–" }}
+                {% if box.standort.raum %} / Raum {{ box.standort.raum }}{% endif %}
+              {% else %}
+                –
+              {% endif %}
+            </dd>
+          </div>
+        </div>
+
+        <form method="post" action="/admin/standorte/box/{{ box.id }}/umziehen/" novalidate>
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="standort_id" class="form-label">
+              Neuer Ziel-Standort <span class="form-label-required">*</span>
+            </label>
+            <select id="standort_id" name="standort_id" class="form-control" required>
+              <option value="">– bitte wählen –</option>
+              {% for s in standorte %}
+                {# Aktuellen Standort als "(aktuell)" markieren #}
+                <option value="{{ s.id }}"
+                  {% if form_data.standort_id == s.id|stringformat:"s" %}selected
+                  {% elif box.standort_id == s.id %}selected
+                  {% endif %}>
+                  {% if s.bildungseinrichtung.name %}{{ s.bildungseinrichtung.name }} – {% endif %}
+                  {{ s.gebaeude|default:"–" }}{% if s.raum %} / Raum {{ s.raum }}{% endif %}
+                  {% if box.standort_id == s.id %} (aktuell){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <p class="form-hint">Der aktuelle Standort ist vorausgewählt. Wählen Sie einen anderen Standort, um die Box umzuziehen.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="beschreibung" class="form-label">Beschreibung
+              <span class="form-label-hint">(optional)</span>
+            </label>
+            <input type="text" id="beschreibung" name="beschreibung" class="form-control"
+              placeholder="Optionale Beschreibung der Box…"
+              value="{{ form_data.beschreibung|default:box.beschreibung|default:'' }}">
+            <p class="form-hint">Leer lassen, um die bestehende Beschreibung beizubehalten.</p>
+          </div>
+
+          <div class="form-actions">
+            <a href="/admin/standorte/" class="btn btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn btn-primary"
+              id="box-move-submit"
+              data-box-nummer="{{ box.box_nummer|default:box.id }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+              Box umziehen
+            </button>
+          </div>
+        </form>
+        <script>
+        (function () {
+          var btn = document.getElementById('box-move-submit');
+          if (btn) {
+            btn.addEventListener('click', function (e) {
+              var nr = btn.getAttribute('data-box-nummer');
+              if (!confirm('Box "' + nr + '" wirklich zum neuen Standort umziehen?')) {
+                e.preventDefault();
+              }
+            });
+          }
+        })();
+        </script>
+        {% endif %}
+
+        {# ---- Box anlegen ---- #}
         {% else %}
         <form method="post" action="/admin/standorte/box/neu/" novalidate>
           {% csrf_token %}
@@ -179,6 +271,18 @@
   </div>
 
   <div class="form-sidebar">
+    {% if form_type == 'box_move' and box %}
+    <div class="card card--info">
+      <div class="card-body">
+        <h3 class="info-title">Hinweis zum Umzug</h3>
+        <ul class="info-list">
+          <li>Alle Geräte in dieser Box bleiben ihr zugeordnet.</li>
+          <li>Nur der Standort der Box ändert sich.</li>
+          <li>Die Box-Nummer bleibt unverändert.</li>
+        </ul>
+      </div>
+    </div>
+    {% else %}
     <div class="card card--info">
       <div class="card-body">
         <h3 class="info-title">Hierarchie</h3>
@@ -189,6 +293,7 @@
         </ul>
       </div>
     </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

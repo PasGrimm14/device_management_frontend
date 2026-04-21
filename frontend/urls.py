@@ -56,6 +56,7 @@ urlpatterns = [
     path('admin/standorte/einrichtung/neu/', standort_views.admin_bildungseinrichtung_create_view, name='admin_bildungseinrichtung_create'),
     path('admin/standorte/standort/neu/', standort_views.admin_standort_create_view, name='admin_standort_create'),
     path('admin/standorte/box/neu/', standort_views.admin_box_create_view, name='admin_box_create'),
+    path('admin/standorte/box/<int:box_id>/umziehen/', standort_views.admin_box_move_view, name='admin_box_move'),
 
     # Admin - Ausleihen-Verwaltung
     path('admin/ausleihen/', admin_views.admin_loan_list_view, name='admin_loan_list'),

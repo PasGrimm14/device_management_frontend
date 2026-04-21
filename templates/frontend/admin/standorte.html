@@ -60,12 +60,23 @@
                 {% with standort_boxen=boxen %}
                   {% for box in standort_boxen %}
                     {% if box.standort_id == standort.id %}
-                      <div style="display:inline-flex;align-items:center;gap:.4rem;margin:.25rem;padding:.3rem .6rem;background:var(--surface);border:1px solid var(--line);border-radius:4px;font-size:.85rem">
+                      <div style="display:inline-flex;align-items:center;gap:.5rem;margin:.25rem;padding:.3rem .6rem;background:var(--surface);border:1px solid var(--line);border-radius:4px;font-size:.85rem">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
                           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                         </svg>
-                        Box {{ box.box_nummer }}
-                        {% if box.beschreibung %}<span class="text-muted"> – {{ box.beschreibung }}</span>{% endif %}
+                        <span>
+                          Box {{ box.box_nummer }}
+                          {% if box.beschreibung %}<span class="text-muted"> – {{ box.beschreibung }}</span>{% endif %}
+                        </span>
+                        <a href="/admin/standorte/box/{{ box.id }}/umziehen/"
+                           class="btn btn-ghost btn-xs"
+                           title="Box zu anderem Standort umziehen"
+                           style="margin-left:.25rem">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                          Umziehen
+                        </a>
                       </div>
                     {% endif %}
                   {% endfor %}
@@ -74,7 +85,6 @@
             {% endif %}
           {% endfor %}
         {% endwith %}
-        {% comment %}Falls keine Standorte für diese Einrichtung vorhanden{% endcomment %}
       </div>
     </div>
   {% endfor %}

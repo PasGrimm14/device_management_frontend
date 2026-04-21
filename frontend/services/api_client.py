@@ -200,6 +200,14 @@ class APIClient:
         response = self.session.get(self._url(f'/api/v1/boxen/{box_id}'))
         return self._handle_response(response)
 
+    def update_box(self, box_id: int, data: dict) -> dict:
+        """Aktualisiert eine Box (Standort-Umzug, Beschreibung).
+        Nutzt PUT gemäß Backend-Endpunkt PUT /api/v1/boxen/{box_id}.
+        BoxUpdate erlaubt box_nummer, standort_id und beschreibung als optionale Felder.
+        """
+        response = self.session.put(self._url(f'/api/v1/boxen/{box_id}'), json=data)
+        return self._handle_response(response)
+
     def get_standorte(self, skip=0, limit=100) -> list:
         params = {'skip': skip, 'limit': limit}
         response = self.session.get(self._url('/api/v1/standorte/'), params=params)

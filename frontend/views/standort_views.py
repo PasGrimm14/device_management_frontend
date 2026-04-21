@@ -162,3 +162,84 @@ def admin_box_create_view(request):
             context['form_data'] = request.POST
 
     return render(request, 'frontend/admin/standort_form.html', context)
+
+
+@admin_required
+@require_http_methods(['GET', 'POST'])
+def admin_box_move_view(request, box_id: int):
+    """Box von einem Standort zu einem anderen umziehen.
+
+    Ruft PUT /api/v1/boxen/{box_id} mit dem neuen standort_id auf.
+    BoxUpdate erlaubt box_nummer, standort_id und beschreibung als optionale Felder,
+    sodass nur der Standort geändert wird ohne andere Felder zu überschreiben.
+    """
+    client = get_client(request)
+    context = {
+        'current_user': request.current_user,
+        'form_type': 'box_move',
+        'box': None,
+        'standorte': [],
+        'einrichtungen': [],
+        'form_data': {},
+        'error': None,
+    }
+
+    # Box laden – bei Fehler zurück zur Übersicht
+    try:
+        box = client.get_box(box_id)
+        context['box'] = box
+    except APIError as e:
+        if e.status_code == 404:
+            messages.error(request, 'Box nicht gefunden.')
+        else:
+            messages.error(request, f'Box konnte nicht geladen werden: {e.detail}')
+        return redirect('/admin/standorte/')
+
+    # Standorte und Einrichtungen für Ziel-Dropdown laden
+    try:
+        context['standorte'] = client.get_standorte(limit=500)
+    except APIError as e:
+        context['error'] = f'Standorte konnten nicht geladen werden: {e.detail}'
+
+    try:
+        context['einrichtungen'] = client.get_bildungseinrichtungen(limit=200)
+    except APIError:
+        pass
+
+    if request.method == 'POST':
+        neuer_standort_id = request.POST.get('standort_id', '').strip()
+        neue_beschreibung = request.POST.get('beschreibung', '').strip()
+
+        if not neuer_standort_id:
+            messages.error(request, 'Bitte einen Ziel-Standort auswählen.')
+            context['form_data'] = request.POST
+            return render(request, 'frontend/admin/standort_form.html', context)
+
+        try:
+            neuer_standort_id_int = int(neuer_standort_id)
+        except ValueError:
+            messages.error(request, 'Ungültige Standort-ID.')
+            context['form_data'] = request.POST
+            return render(request, 'frontend/admin/standort_form.html', context)
+
+        # PUT BoxUpdate: nur standort_id (Pflicht laut Schema) und optionale beschreibung.
+        # box_nummer wird weggelassen – das Backend lässt alle Felder optional.
+        put_data: dict = {'standort_id': neuer_standort_id_int}
+        if neue_beschreibung:
+            put_data['beschreibung'] = neue_beschreibung
+
+        try:
+            client.update_box(box_id, put_data)
+            box_nummer = context['box'].get('box_nummer', f'#{box_id}')
+            messages.success(request, f'Box "{box_nummer}" erfolgreich zum neuen Standort umgezogen.')
+            return redirect('/admin/standorte/')
+        except APIError as e:
+            if e.status_code == 404:
+                messages.error(request, 'Box oder Ziel-Standort nicht gefunden.')
+            elif e.status_code == 422:
+                messages.error(request, 'Ungültige Eingabe. Bitte überprüfen Sie Ihre Angaben.')
+            else:
+                messages.error(request, f'Umzug fehlgeschlagen: {e.detail}')
+            context['form_data'] = request.POST
+
+    return render(request, 'frontend/admin/standort_form.html', context)
