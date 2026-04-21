@@ -15,6 +15,7 @@ Django-basiertes Web-Frontend für das Gerätemanagementsystem der DHBW Heilbron
 - [Docker](#docker)
 - [Projektstruktur](#projektstruktur)
 - [Rollen & Berechtigungen](#rollen--berechtigungen)
+- [SSO-Authentifizierungsflow](#sso-authentifizierungsflow)
 - [API-Integration](#api-integration)
 
 ---
@@ -120,8 +121,40 @@ Alle Einstellungen werden über eine `.env`-Datei im Projektstamm gesetzt:
 | `API_PUBLIC_URL` | *(leer = API_BASE_URL)* | Öffentliche Backend-URL für Browser-seitige API-Calls (Scanner) |
 | `CSRF_TRUSTED_ORIGINS` | `http://localhost:8050` | Komma-getrennte Liste vertrauenswürdiger Origins |
 | `LOGO_URL` | *(leer)* | URL des DHBW-Logos (z.B. externer CDN-Link) |
+| `SYNC_URL` | `https://sync.heilbronn.dhbw.de` | Basis-URL von N'SYNC (SSO-Provider). Bei gesetztem Wert werden nicht-authentifizierte Nutzer automatisch dorthin weitergeleitet. |
 
 **Hinweis zu `API_PUBLIC_URL`**: Der QR-/NFC-Scanner ruft die API direkt aus dem Browser auf. Wenn das Backend intern unter einer anderen URL erreichbar ist als für den Browser, muss `API_PUBLIC_URL` auf die öffentlich zugängliche Backend-URL gesetzt werden.
+
+**Hinweis zu `SYNC_URL`**: Wenn gesetzt, leitet die `JWTAuthMiddleware` nicht-authentifizierte Nutzer direkt zu `{SYNC_URL}/accounts/sso/redirect/` weiter. N'SYNC übernimmt dann die Shibboleth-Authentifizierung und schickt den Nutzer mit einem One-Time-Token (OTT) zurück an `/sso/callback/?ott=<token>`. Ohne `SYNC_URL` fällt das System auf die lokale Login-Maske zurück.
+
+---
+
+## SSO-Authentifizierungsflow
+
+```
+Browser          Django-Frontend         N'SYNC (SSO)        FastAPI-Backend
+  │                    │                     │                     │
+  │─── GET /geraete/ ─►│                     │                     │
+  │                    │ kein JWT in Session  │                     │
+  │◄── redirect ───────│──────────────────►  │                     │
+  │                    │   /accounts/sso/redirect/                 │
+  │                    │                     │                     │
+  │       Shibboleth-Authentifizierung       │                     │
+  │◄──────────────────────────────────────── │                     │
+  │─── GET /sso/callback/?ott=<token> ──────►│                     │
+  │                    │ POST /api/v1/sso/callback {token}         │
+  │                    │─────────────────────────────────────────►  │
+  │                    │◄──────────────────── {access_token} ──────│
+  │                    │ GET /api/v1/me (mit JWT)                  │
+  │                    │─────────────────────────────────────────►  │
+  │                    │◄──────────────────── {user_data} ─────────│
+  │                    │ JWT + user in Session speichern           │
+  │◄── redirect / ─────│                     │                     │
+```
+
+- **OTT (One-Time Token)**: Ein kurzlebiges, einmalig verwendbares Token von N'SYNC; wird gegen ein reguläres JWT beim Backend eingetauscht.
+- **Fallback**: Ist `SYNC_URL` nicht gesetzt (lokale Entwicklung), wird zur internen Login-Maske unter `/login/` weitergeleitet.
+- **Exempt Paths**: `/sso/callback/`, `/login/`, `/logout/` und `/static/` sind von der Middleware ausgenommen.
 
 ---
 
@@ -165,6 +198,7 @@ device_management_frontend/
 │   │   ├── loans.py              # Ausleihen
 │   │   ├── reservations.py       # Reservierungen
 │   │   ├── profile.py            # Profil, Hilfe, Scanner
+│   │   ├── sso.py                # SSO-Callback (OTT → JWT)
 │   │   ├── admin_views.py        # Admin: Geräte, Benutzer, Logs, Export, Statistik
 │   │   └── standort_views.py     # Admin: Standortverwaltung
 │   ├── services/
