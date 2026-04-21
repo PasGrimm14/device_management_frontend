@@ -1,6 +1,7 @@
 """URL configuration for the frontend app."""
 
 from django.urls import path
+from django.views.generic import RedirectView
 from frontend.views import auth, dashboard, devices, loans, reservations, profile, admin_views, standort_views, sso
 
 urlpatterns = [
@@ -39,6 +40,9 @@ urlpatterns = [
     # Help & Scanner
     path('hilfe/', profile.help_view, name='help'),
     path('scanner/', profile.scanner_view, name='scanner'),
+
+    # Impressum
+    path('impressum/', RedirectView.as_view(url='https://www.heilbronn.dhbw.de/impressum/'), name='impressum'),
 
     # Admin views
     path('admin/geraete/', admin_views.admin_device_list_view, name='admin_device_list'),

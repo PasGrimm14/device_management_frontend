@@ -41,6 +41,13 @@
     {% include "includes/mobile_nav.html" %}
   {% endif %}
 
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span>DHBW-Gerätemanagement</span>
+      <a href="{% url 'impressum' %}" class="site-footer-link">Impressum</a>
+    </div>
+  </footer>
+
   <script src="{% static 'js/app.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>

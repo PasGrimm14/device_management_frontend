@@ -1349,3 +1349,40 @@ details[open] .faq-question::after { content: '–'; }
     font-size: 0.68rem;
   }
 }
+/* ---------------------------------------------------------
+   36. Site Footer
+   --------------------------------------------------------- */
+.site-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding: 0.85rem 1.5rem;
+  margin-top: auto;
+  /* Auf mobilen Geräten genug Abstand zur Mobile-Nav lassen */
+  padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0));
+}
+
+.site-footer-inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.775rem;
+  color: var(--muted);
+}
+
+.site-footer-link {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition);
+}
+.site-footer-link:hover { color: var(--primary); }
+
+/* Auf mobilen Geräten Footer über der Mobile-Nav anzeigen */
+@media (max-width: 1024px) {
+  .site-footer {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0));
+  }
+}
