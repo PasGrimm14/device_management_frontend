@@ -12,6 +12,8 @@ services:
       - DEBUG=${DEBUG}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
       - LOGO_URL=${LOGO_URL}
+      - SECRET_KEY=${SECRET_KEY}  
+      - SYNC_URL=${SYNC_URL}
     restart: unless-stopped
     networks:
       - default
